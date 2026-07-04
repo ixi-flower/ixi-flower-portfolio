@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import ProfileCard from "@/components/profile-card";
 import TypingKeyboard from "@/components/typing-keyboard";
 import StaggeredGrid from "@/components/staggered-grid";
@@ -16,6 +16,126 @@ import {
   NetworkSecurityIcon,
   BackendIcon,
 } from "@/components/skill-icons";
+
+/* ─── Custom Video Player for ECODE ─── */
+function EcodeVideo({ src, poster }: { src: string; poster?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showBar, setShowBar] = useState(false);
+  const barTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const updateProgress = useCallback(() => {
+    if (ref.current && ref.current.duration) {
+      setProgress((ref.current.currentTime / ref.current.duration) * 100);
+    }
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (!ref.current) return;
+    if (ref.current.paused) {
+      ref.current.play();
+      setPlaying(true);
+      setShowBar(true);
+      clearTimeout(barTimer.current);
+    } else {
+      ref.current.pause();
+      setPlaying(false);
+    }
+  }, []);
+
+  const handleBarAutoHide = useCallback(() => {
+    setShowBar(true);
+    clearTimeout(barTimer.current);
+    if (playing) {
+      barTimer.current = setTimeout(() => setShowBar(false), 2500);
+    }
+  }, [playing]);
+
+  useEffect(() => {
+    return () => clearTimeout(barTimer.current);
+  }, []);
+
+  return (
+    <div
+      className="relative aspect-video bg-black cursor-pointer overflow-hidden"
+      onMouseEnter={() => { setHover(true); handleBarAutoHide(); }}
+      onMouseLeave={() => { setHover(false); if (playing) setShowBar(false); }}
+      onMouseMove={handleBarAutoHide}
+    >
+      <video
+        ref={ref}
+        src={src}
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 w-full h-full object-cover"
+        onClick={toggle}
+        onTimeUpdate={updateProgress}
+        onEnded={() => { setPlaying(false); setShowBar(false); }}
+      />
+
+      {/* Play button — only when paused, always visible on hover */}
+      {!playing && hover && (
+        <div className="absolute inset-0 flex items-center justify-center" onClick={toggle}>
+          <div className="w-14 h-14 rounded-full bg-violet-600/30 backdrop-blur-md border border-white/30 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:bg-violet-600/40 shadow-lg">
+            <svg className="w-5 h-5 text-white ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Large central play when completely idle */}
+      {!playing && !hover && (
+        <div className="absolute inset-0 flex items-center justify-center" onClick={toggle}>
+          <div className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-110">
+            <svg className="w-6 h-6 text-white ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Controls bar — appears on hover while playing */}
+      {playing && showBar && (
+        <div
+          className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3">
+            {/* Play/Pause */}
+            <button
+              onClick={toggle}
+              className="text-white/90 hover:text-white flex-shrink-0 transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                {playing ? (
+                  <><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></>
+                ) : (
+                  <path d="M8 5v14l11-7z"/>
+                )}
+              </svg>
+            </button>
+
+            {/* Progress bar */}
+            <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden group/progress cursor-pointer relative"
+              onClick={(e) => {
+                if (!ref.current) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const pct = (e.clientX - rect.left) / rect.width;
+                ref.current.currentTime = pct * ref.current.duration;
+              }}
+            >
+              <div className="h-full bg-violet-500 rounded-full transition-all duration-150" style={{ width: `${progress}%` }} />
+              <div className="absolute inset-0 opacity-0 group-hover/progress:opacity-100 bg-white/10 rounded-full" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const skillItems = [
   {
@@ -552,19 +672,6 @@ const wisdom = (moments: Moment[]): string => {
 
       {/* ─── YouTube Video Section ─── */}
       <section className="relative z-10 px-4 sm:px-8 lg:px-16 py-20 sm:py-32 overflow-hidden">
-        {/* Ambient glow orbs */}
-        <div className="absolute inset-0 -z-10 pointer-events-none">
-          <motion.div
-            className="absolute top-1/4 left-[15%] w-[500px] h-[500px] rounded-full bg-red-500/[0.04] blur-[120px]"
-            animate={{ x: [0, 30, -20, 0], y: [0, -20, 30, 0], scale: [1, 1.1, 0.95, 1] }}
-            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute bottom-1/3 right-[10%] w-[400px] h-[400px] rounded-full bg-amber-500/[0.03] blur-[100px]"
-            animate={{ x: [0, -30, 20, 0], y: [0, 30, -10, 0], scale: [1, 0.95, 1.08, 1] }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </div>
 
         <div className="w-full max-w-5xl mx-auto">
           {/* Section badge */}
@@ -609,10 +716,6 @@ const wisdom = (moments: Moment[]): string => {
             viewport={{ once: true }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            {/* Animated gradient border glow */}
-            <div className="absolute -inset-[3px] bg-gradient-to-br from-red-500/30 via-amber-500/20 to-red-600/30 rounded-2xl blur-sm" />
-            <div className="absolute -inset-[6px] bg-gradient-to-br from-red-500/10 via-transparent to-amber-500/10 rounded-2xl blur-xl" />
-
             {/* Video container */}
             <div className="relative rounded-2xl overflow-hidden border border-zinc-700/50 bg-black shadow-2xl">
               <div className="absolute inset-0 rounded-2xl pointer-events-none z-10 border border-white/[0.06]" />
@@ -656,6 +759,192 @@ const wisdom = (moments: Moment[]): string => {
               </a>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ─── ECODE Team Section ─── */}
+      <section className="relative z-10 px-4 sm:px-8 lg:px-16 py-20 sm:py-32 overflow-hidden">
+        {/* Glow effects */}
+        <div className="absolute inset-0 -z-10 pointer-events-none">
+          <div className="absolute top-1/4 left-[5%] w-[600px] h-[600px] rounded-full bg-violet-500/[0.04] blur-[150px]" />
+          <div className="absolute bottom-1/4 right-[5%] w-[500px] h-[500px] rounded-full bg-violet-800/[0.03] blur-[120px]" />
+        </div>
+
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Section badge */}
+          <motion.div
+            className="flex justify-center mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 text-xs text-zinc-500 border border-zinc-800 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+              Team ECODE
+            </div>
+          </motion.div>
+
+          <motion.h2
+            className="text-2xl sm:text-4xl font-bold text-white mb-3 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            &lt;/ECODE&gt;
+          </motion.h2>
+
+          {/* ─── Hero: Text + Iframe ─── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mt-12 mb-20 items-center">
+            {/* Left: Description */}
+            <motion.div
+              className="flex flex-col gap-6"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">
+                <span className="text-violet-400 font-semibold">ECODE</span> is a Berlin &amp; New York-based web development agency building modern, high-performance digital experiences. We specialise in scalable backends, polished frontends, Shopify ecosystems, and end-to-end product engineering — from concept to deployment.
+              </p>
+              <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">
+                Our team of engineers, designers, and strategists turns complex ideas into production-ready products with clarity, speed, and personality. We work across Next.js, React, Node.js, Shopify, and cloud infrastructure — serving clients worldwide.
+              </p>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-6 py-4 border-t border-zinc-800/60 mt-2">
+                {[
+                  { value: "Berlin+NY", label: "Offices" },
+                  { value: "Full-Cycle", label: "Development" },
+                  { value: "Worldwide", label: "Clients" },
+                ].map((stat) => (
+                  <div key={stat.label}>
+                    <div className="text-sm font-semibold text-violet-400">{stat.value}</div>
+                    <div className="text-xs text-zinc-600 mt-0.5">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                <a
+                  href="https://ecodetm.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-violet-600/10 border border-violet-600/30 text-violet-400 hover:bg-violet-600/20 hover:border-violet-600/50 hover:text-violet-300 transition-all duration-300 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                  Visit ECODE
+                  <svg className="w-3.5 h-3.5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+                </a>
+              </motion.div>
+            </motion.div>
+
+            {/* Right: Iframe */}
+            <motion.div
+              className="relative w-full"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              {/* Card wrapper */}
+              <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-black/40 backdrop-blur-sm shadow-2xl">
+                <div className="absolute inset-0 rounded-2xl pointer-events-none z-10 border border-white/[0.06]" />
+                {/* Glow accent */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-violet-500/[0.08] blur-[60px] pointer-events-none" />
+                <div className="relative aspect-[4/3]">
+                  <iframe
+                    src="https://ecodetm.com"
+                    title="ECODE Website"
+                    className="absolute inset-0 w-full h-full"
+                    sandbox="allow-scripts allow-same-origin allow-popups"
+                    loading="lazy"
+                  />
+                </div>
+                {/* Bottom bar */}
+                <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-800/60 bg-black/20">
+                  <span className="text-xs text-zinc-600 font-mono">ecodetm.com</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Live</span>
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ─── Video Gallery ─── */}
+          <div className="relative">
+            <motion.h3
+              className="text-lg sm:text-xl font-semibold text-white mb-8 text-center tracking-wide"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+            >
+              Our Work in Motion
+            </motion.h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  title: "ECODE — Brand Identity",
+                  desc: "Motion design showcasing the ECODE brand identity — from concept to animation.",
+                  url: "https://res.cloudinary.com/dx1wa1ica/video/upload/v1783195916/ecode/ecode_new.mp4",
+                },
+                {
+                  title: "ECODE — Creative Showcase",
+                  desc: "A visual journey through our design process and creative direction.",
+                  url: "https://res.cloudinary.com/dx1wa1ica/video/upload/v1783196067/ecode/ecode1_3.mp4",
+                },
+                {
+                  title: "ECODE — Final Cut",
+                  desc: "The full production reel — typography, transitions, and visual storytelling.",
+                  url: "https://res.cloudinary.com/dx1wa1ica/video/upload/v1783196239/ecode/ecode_adjusted_final.mp4",
+                },
+              ].map((video, i) => (
+                <motion.div
+                  key={video.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.12 }}
+                >
+                  <div className="group relative rounded-2xl overflow-hidden border border-zinc-800 hover:border-violet-600/40 bg-black/50 backdrop-blur-sm transition-all duration-500 hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.15)]">
+                    {/* Glass border overlay */}
+                    <div className="absolute inset-0 rounded-2xl pointer-events-none z-10 border border-white/[0.06]" />
+                    
+                    {/* Hover glow */}
+                    <div className="absolute -inset-1 bg-gradient-to-br from-violet-600/10 via-transparent to-violet-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none" />
+
+                    {/* Video */}
+                    <EcodeVideo
+                      src={video.url}
+                    />
+
+                    {/* Info */}
+                    <div className="p-5">
+                      <h3 className="text-sm font-semibold text-white group-hover:text-violet-300 transition-colors mb-1.5 truncate">
+                        {video.title}
+                      </h3>
+                      <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">
+                        {video.desc}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
