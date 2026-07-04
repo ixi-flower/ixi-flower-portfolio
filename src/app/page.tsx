@@ -805,9 +805,6 @@ const wisdom = (moments: Moment[]): string => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">
-                <span className="text-violet-400 font-semibold">ECODE</span> is a Berlin &amp; New York-based web development agency building modern, high-performance digital experiences. We specialise in scalable backends, polished frontends, Shopify ecosystems, and end-to-end product engineering — from concept to deployment.
-              </p>
               <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">
                 Our team of engineers, designers, and strategists turns complex ideas into production-ready products with clarity, speed, and personality. We work across Next.js, React, Node.js, Shopify, and cloud infrastructure — serving clients worldwide.
               </p>
