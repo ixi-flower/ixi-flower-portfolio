@@ -12,6 +12,7 @@ import ProjectDialog from "@/components/project-dialog";
 import { CreepyButton } from "@/components/creepy-button";
 import { PerspectiveCarousel } from "@/components/ui/perspective-carousel";
 import { motion } from "framer-motion";
+import { CursorCard } from "@/components/ui/cursor-card";
 import {
   FrontendIcon,
   NetworkSecurityIcon,
@@ -978,7 +979,39 @@ const wisdom = (moments: Moment[]): string => {
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
               <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">
-                Our team of engineers, designers, and strategists turns complex ideas into production-ready products with clarity, speed, and personality. We work across Next.js, React, Node.js, Shopify, and cloud infrastructure — serving clients worldwide.
+                Our team of{" "}
+                <CursorCard image="/Ecode.png" description="Full-stack engineers specializing in scalable, production-ready systems.">
+                  engineers
+                </CursorCard>
+                ,{" "}
+                <CursorCard image="/Ecode.png" description="Creative designers crafting intuitive, pixel-perfect user experiences.">
+                  designers
+                </CursorCard>
+                , and{" "}
+                <CursorCard image="/Ecode.png" description="Strategic thinkers aligning technology with business goals.">
+                  strategists
+                </CursorCard>{" "}
+                turns complex ideas into production-ready products with clarity, speed, and personality. We work across{" "}
+                <CursorCard image="/Ecode.png" description="Building high-performance apps with the React framework for production.">
+                  Next.js
+                </CursorCard>
+                ,{" "}
+                <CursorCard image="/Ecode.png" description="Building dynamic UIs with the industry-standard component library.">
+                  React
+                </CursorCard>
+                ,{" "}
+                <CursorCard image="/Ecode.png" description="Scalable server-side JavaScript runtime for back-end services.">
+                  Node.js
+                </CursorCard>
+                ,{" "}
+                <CursorCard image="/Ecode.png" description="Custom headless commerce and theme development on Shopify Plus.">
+                  Shopify
+                </CursorCard>
+                , and{" "}
+                <CursorCard image="/Ecode.png" description="AWS, Vercel, Cloudflare — deploying and scaling infrastructure globally.">
+                  cloud infrastructure
+                </CursorCard>{" "}
+                — serving clients worldwide.
               </p>
 
               {/* Stats */}
