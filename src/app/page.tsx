@@ -980,15 +980,15 @@ const wisdom = (moments: Moment[]): string => {
             >
               <p className="text-sm sm:text-base text-zinc-500 leading-relaxed">
                 Our team of{" "}
-                <CursorCard image="/Ecode.png" description="Full-stack engineers specializing in scalable, production-ready systems.">
+                <CursorCard image="https://images.unsplash.com/photo-1778146476147-5f8d4bd03c79?fm=jpg&q=60&w=600&auto=format&fit=crop" description="Full-stack engineers specializing in scalable, production-ready systems.">
                   engineers
                 </CursorCard>
                 ,{" "}
-                <CursorCard image="/Ecode.png" description="Creative designers crafting intuitive, pixel-perfect user experiences.">
+                <CursorCard image="https://images.unsplash.com/photo-1753164597513-e5994541e8cb?fm=jpg&q=60&w=600&auto=format&fit=crop" description="Creative designers crafting intuitive, pixel-perfect user experiences.">
                   designers
                 </CursorCard>
                 , and{" "}
-                <CursorCard image="/Ecode.png" description="Strategic thinkers aligning technology with business goals.">
+                <CursorCard image="https://images.unsplash.com/photo-1758873272534-9eb0ea690be1?fm=jpg&q=60&w=600&auto=format&fit=crop" description="Strategic thinkers aligning technology with business goals.">
                   strategists
                 </CursorCard>{" "}
                 turns complex ideas into production-ready products with clarity, speed, and personality. We work across{" "}
