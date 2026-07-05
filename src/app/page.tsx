@@ -1031,11 +1031,10 @@ const wisdom = (moments: Moment[]): string => {
                 {/* Glow accent */}
                 <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-violet-500/[0.08] blur-[60px] pointer-events-none" />
                 <div className="relative aspect-[4/3]">
-                  <iframe
-                    src="https://ecodetm.com"
-                    title="ECODE Website"
-                    className="absolute inset-0 w-full h-full"
-                    sandbox="allow-scripts allow-same-origin allow-popups"
+                  <img
+                    src="/Ecode.png"
+                    alt="ECODE Website"
+                    className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
                   />
                 </div>
