@@ -21,10 +21,12 @@ import {
 /* ─── Custom Video Player for ECODE ─── */
 function EcodeVideo({ src, poster }: { src: string; poster?: string }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [hover, setHover] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showBar, setShowBar] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const barTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const updateProgress = useCallback(() => {
@@ -46,6 +48,15 @@ function EcodeVideo({ src, poster }: { src: string; poster?: string }) {
     }
   }, []);
 
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current.requestFullscreen();
+    }
+  }, []);
+
   const handleBarAutoHide = useCallback(() => {
     setShowBar(true);
     clearTimeout(barTimer.current);
@@ -55,11 +66,17 @@ function EcodeVideo({ src, poster }: { src: string; poster?: string }) {
   }, [playing]);
 
   useEffect(() => {
-    return () => clearTimeout(barTimer.current);
+    const onChange = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => {
+      clearTimeout(barTimer.current);
+      document.removeEventListener("fullscreenchange", onChange);
+    };
   }, []);
 
   return (
     <div
+      ref={containerRef}
       className="relative aspect-video bg-black cursor-pointer overflow-hidden"
       onMouseEnter={() => { setHover(true); handleBarAutoHide(); }}
       onMouseLeave={() => { setHover(false); if (playing) setShowBar(false); }}
@@ -131,6 +148,23 @@ function EcodeVideo({ src, poster }: { src: string; poster?: string }) {
               <div className="h-full bg-violet-500 rounded-full transition-all duration-150" style={{ width: `${progress}%` }} />
               <div className="absolute inset-0 opacity-0 group-hover/progress:opacity-100 bg-white/10 rounded-full" />
             </div>
+
+            {/* Fullscreen */}
+            <button
+              onClick={toggleFullscreen}
+              className="text-white/90 hover:text-white flex-shrink-0 transition-colors"
+              title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              {fullscreen ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       )}
@@ -750,6 +784,50 @@ const wisdom = (moments: Moment[]): string => {
                 {
                   src: "/carousel-7.png",
                   title: "Sofra",
+                },
+                {
+                  src: "/Ecoshop.webp",
+                  title: "Ecoshop",
+                },
+                {
+                  src: "/ecoshop2.webp",
+                  title: "Ecoshop 2",
+                },
+                {
+                  src: "/Serene.webp",
+                  title: "Serene",
+                },
+                {
+                  src: "/serene2.webp",
+                  title: "Serene 2",
+                },
+                {
+                  src: "/serene3.webp",
+                  title: "Serene 3",
+                },
+                {
+                  src: "/Sitobest.webp",
+                  title: "Sitobest",
+                },
+                {
+                  src: "/sitobest2.webp",
+                  title: "Sitobest 2",
+                },
+                {
+                  src: "/sitobest3.webp",
+                  title: "Sitobest 3",
+                },
+                {
+                  src: "/Sofra.webp",
+                  title: "Sofra",
+                },
+                {
+                  src: "/sofra2.webp",
+                  title: "Sofra 2",
+                },
+                {
+                  src: "/sofra3.webp",
+                  title: "Sofra 3",
                 },
               ]}
               defaultActiveIndex={1}
