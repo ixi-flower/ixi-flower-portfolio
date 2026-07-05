@@ -10,6 +10,7 @@ import AnimateCode from "@/components/animate-code";
 import ScrollReveal from "@/components/scroll-reveal";
 import ProjectDialog from "@/components/project-dialog";
 import { CreepyButton } from "@/components/creepy-button";
+import { PerspectiveCarousel } from "@/components/ui/perspective-carousel";
 import { motion } from "framer-motion";
 import {
   FrontendIcon,
@@ -667,6 +668,99 @@ const wisdom = (moments: Moment[]): string => {
             typingSpeed={25}
             className="w-full"
           />
+        </div>
+      </section>
+
+      {/* ─── Perspective Carousel Section ─── */}
+      <section className="relative z-10 px-4 sm:px-8 lg:px-16 py-20 sm:py-32 overflow-hidden">
+        {/* Glow effects */}
+        <div className="absolute inset-0 -z-10 pointer-events-none">
+          <div className="absolute top-1/4 right-[5%] w-[600px] h-[600px] rounded-full bg-amber-500/[0.04] blur-[150px]" />
+          <div className="absolute bottom-1/4 left-[5%] w-[500px] h-[500px] rounded-full bg-orange-800/[0.03] blur-[120px]" />
+        </div>
+
+        <div className="w-full max-w-5xl mx-auto">
+          {/* Section badge */}
+          <motion.div
+            className="flex justify-center mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 text-xs text-zinc-500 border border-zinc-800 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Gallery
+            </div>
+          </motion.div>
+
+          <motion.h2
+            className="text-2xl sm:text-3xl font-bold text-white mb-3 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            Perspectives
+          </motion.h2>
+
+          <motion.p
+            className="text-sm text-zinc-500 mb-12 text-center max-w-md mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+          >
+            Frames from the journey — moments worth remembering.
+          </motion.p>
+
+          {/* Carousel */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+          >
+            <PerspectiveCarousel
+              items={[
+                {
+                  src: "/carousel-1.avif",
+                  title: "Golden Hour",
+                },
+                {
+                  src: "/carousel-2.avif",
+                  title: "Deep Blue",
+                },
+                {
+                  src: "/carousel-3.avif",
+                  title: "Tranquil",
+                },
+                {
+                  src: "/carousel-4.png",
+                  title: "Storipalorium",
+                },
+                {
+                  src: "/carousel-5.png",
+                  title: "BotU",
+                },
+                {
+                  src: "/carousel-6.png",
+                  title: "Serene Azure",
+                },
+                {
+                  src: "/carousel-7.png",
+                  title: "Sofra",
+                },
+              ]}
+              defaultActiveIndex={1}
+              slideWidth={520}
+              loop
+              className="h-[500px] text-zinc-300"
+              imageClassName="rounded-2xl shadow-2xl border border-white/10"
+              labelClassName="text-xs tracking-wider uppercase text-zinc-400 font-medium"
+              controlsClassName="border-zinc-700/80 bg-zinc-900/80 backdrop-blur-md"
+            />
+          </motion.div>
         </div>
       </section>
 
