@@ -25,8 +25,36 @@ export default function Footer() {
         hoverCharColor="#0f0f0f"
         parallaxStrength={15}
         hoverRadius={10}
-        className="absolute inset-0"
+        className="absolute inset-0 footer-heading-glow"
       />
+
+      {/* Neon glow wave on "ixi_flower" heading */}
+      <style>
+        {`
+          @keyframes charGlow {
+            0%, 100% {
+              text-shadow: 0 0 4px rgba(124,58,237,0.3), 0 0 12px rgba(124,58,237,0.1);
+              transform: translateY(0);
+            }
+            25% {
+              text-shadow: 0 0 8px rgba(124,58,237,0.6), 0 0 24px rgba(124,58,237,0.3), 0 0 48px rgba(124,58,237,0.1);
+              transform: translateY(-3px);
+            }
+            50% {
+              text-shadow: 0 0 4px rgba(124,58,237,0.4), 0 0 14px rgba(124,58,237,0.2);
+              transform: translateY(0);
+            }
+            75% {
+              text-shadow: 0 0 6px rgba(124,58,237,0.5), 0 0 18px rgba(124,58,237,0.2);
+              transform: translateY(-1px);
+            }
+          }
+          .footer-heading-glow [data-af-char] {
+            animation: charGlow 3s ease-in-out infinite;
+            animation-delay: calc(var(--char-index, 0) * 0.12s);
+          }
+        `}
+      </style>
 
       {/* Social links overlay */}
       <div className="absolute inset-x-0 top-1/3 z-10 flex flex-col items-center gap-8 px-4">

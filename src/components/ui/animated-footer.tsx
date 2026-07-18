@@ -528,6 +528,7 @@ export function AnimatedFooter({
                 data-af-char
                 aria-hidden="true"
                 className="inline-block"
+                style={{ "--char-index": ci } as React.CSSProperties}
               >
                 {ch === " " ? "\u00a0" : ch}
               </span>
