@@ -12,8 +12,6 @@ const socialLinks = [
 ];
 
 export default function Footer() {
-  const year = new Date().getFullYear();
-
   return (
     <div className="relative min-h-[500px] sm:min-h-[600px] w-full overflow-hidden">
       {/* Animated Footer fills the container */}
@@ -47,15 +45,6 @@ export default function Footer() {
               <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-400 transition-colors duration-300 group-hover:text-violet-400" />
             </a>
           ))}
-        </div>
-      </div>
-
-      {/* Copyright bar */}
-      <div className="absolute bottom-0 inset-x-0 z-10 border-t border-zinc-800/40 backdrop-blur-sm">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
-          <p className="text-center text-xs text-zinc-600">
-            &copy; {year} ixi_flower. All rights reserved.
-          </p>
         </div>
       </div>
     </div>
