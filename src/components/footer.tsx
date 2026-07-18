@@ -19,6 +19,7 @@ export default function Footer() {
         headingLines={["ixi_flower"]}
         leftImage="/animated-footer/hand-left.jpg"
         rightImage="/animated-footer/hand-right.jpg"
+        background="transparent"
         charColor="#7C3AED"
         hoverColor="#A78BFA"
         hoverCharColor="#0f0f0f"
