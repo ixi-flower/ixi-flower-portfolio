@@ -300,6 +300,17 @@ const projects = [
     langColor: "#3178c6",
     gradient: "from-stone-500/20 via-amber-500/10 to-transparent",
   },
+  {
+    title: "Earth Explorer",
+    desc: "Interactive 3D globe with location search — drag, zoom, and click any city or country. Built with globe.gl (Three.js) and Nominatim geocoding. Features fly-to animations, marker pins, and a cyberpunk dark theme.",
+    tech: ["Three.js", "globe.gl", "JavaScript", "Nominatim", "OpenStreetMap"],
+    href: "https://github.com/ixiflower/earth-explorer",
+    site: "https://earth-explorer-eight.vercel.app",
+    stars: 0,
+    lang: "JavaScript",
+    langColor: "#f7df1e",
+    gradient: "from-violet-500/20 via-fuchsia-500/10 to-transparent",
+  },
 ];
 
 const courses = [
