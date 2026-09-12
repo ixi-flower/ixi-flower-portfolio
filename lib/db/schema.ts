@@ -68,5 +68,14 @@ export const postTags = pgTable(
   ]
 );
 
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 240 }).notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type PostRow = typeof posts.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
+export type AdminUserRow = typeof adminUsers.$inferSelect;

@@ -25,7 +25,7 @@ const TECH = [
   { name: "Next.js", yrs: "2+ yrs", level: "Advanced", color: "#000000", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg", invert: true },
   { name: "Tailwind", yrs: "2+ yrs", level: "Advanced", color: "#06b6d4", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" },
   { name: "Python", yrs: "3+ yrs", level: "Advanced", color: "#3776ab", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" },
-  { name: "Node.js", yrs: "3+ yrs", level: "Advanced", color: "#339933", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
+  { name: "Node.js", yrs: "5+ yrs", level: "Advanced", color: "#339933", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
   { name: "Go", yrs: "1+ yrs", level: "Intermediate", color: "#00add8", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/go/go-original.svg" },
   { name: "Docker", yrs: "2+ yrs", level: "Intermediate", color: "#2496ed", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original.svg" },
   { name: "PostgreSQL", yrs: "2+ yrs", level: "Intermediate", color: "#336791", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" },
@@ -36,7 +36,7 @@ const TECH = [
 const WAKA = {
   total: "1,847h 32m",
   daily: "3 hrs 12 mins",
-  codingSince: "2020",
+  codingSince: "2019",
   age: "17 (born 2007)",
   langs: [
     { name: "TypeScript", pct: 42 },
@@ -390,7 +390,7 @@ function BlogModal({ blog, onClose }: { blog: Blog | null; onClose: () => void }
         <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 border-b border-zinc-800 bg-zinc-900 shrink-0">
           <div role="tablist" aria-label="Language" className="inline-flex border border-zinc-700 overflow-hidden">
             <button role="tab" aria-selected={lang === "en"} onClick={() => setLang("en")} className={`px-3 py-1 text-xs font-mono transition-colors ${lang === "en" ? "bg-zinc-100 text-zinc-900" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"}`}>EN</button>
-            <button role="tab" aria-selected={lang === "fa"} onClick={() => setLang("fa")} className={`px-3 py-1 text-xs transition-colors ${lang === "fa" ? "bg-zinc-100 text-zinc-900 font-[var(--font-vazirmatn)]" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300 font-[var(--font-vazirmatn)]"}`}>FA — فارسی</button>
+            <button role="tab" aria-selected={lang === "fa"} onClick={() => setLang("fa")} className={`px-3 py-1 text-xs transition-colors ${lang === "fa" ? "bg-zinc-100 text-zinc-900 font-[var(--font-vazirmatn)]" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300 font-[var(--font-vazirmatn)]"}`}>FA</button>
           </div>
           {faActive && !hasFa && <span className="text-[10px] text-zinc-500">— ترجمه در دسترس نیست، نمایش انگلیسی</span>}
           {coverUrl && <span className="hidden sm:inline text-[10px] text-zinc-600 truncate max-w-[160px]">{coverUrl}</span>}
@@ -502,14 +502,18 @@ export default function Home() {
     <main className="min-h-screen bg-zinc-950 text-zinc-200 p-3 font-mono">
       <div className="mx-auto max-w-5xl">
         {/* ASCII header - hidden on mobile like original */}
-        <div className="text-center mb-4 text-zinc-500 hidden md:block overflow-hidden">
-          <pre className="text-[7px] leading-[1.1] whitespace-pre font-mono tracking-tight">
-{`██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗
-██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝
-██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗
-██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝
-╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗
- ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝`}
+        <div className="hidden md:flex flex-col items-center text-center mb-4 text-zinc-500 px-2">
+          <pre className="inline-block text-left whitespace-pre leading-none font-mono text-zinc-500 text-[7px] tracking-tight" style={{ fontVariantLigatures: "none", textRendering: "geometricPrecision" }}>
+{`█     █░▓█████  ██▓     ▄████▄   ▒█████   ███▄ ▄███▓▓█████
+▓█░ █ ░█░▓█   ▀ ▓██▒    ▒██▀ ▀█  ▒██▒  ██▒▓██▒▀█▀ ██▒▓█   ▀
+▒█░ █ ░█ ▒███   ▒██░    ▒▓█    ▄ ▒██░  ██▒▓██    ▓██░▒███
+░█░ █ ░█ ▒▓█  ▄ ▒██░    ▒▓▓▄ ▄██▒▒██   ██░▒██    ▒██ ▒▓█  ▄
+░░██▒██▓ ░▒████▒░██████▒▒ ▓███▀ ░░ ████▓▒░▒██▒   ░██▒░▒████▒
+░ ▓░▒ ▒  ░░ ▒░ ░░ ▒░▓  ░░ ░▒ ▒  ░░ ▒░▒░▒░ ░ ▒░   ░  ░░░ ▒░ ░
+  ▒ ░ ░   ░ ░  ░░ ░ ▒  ░  ░  ▒     ░ ▒ ▒░ ░  ░      ░ ░ ░  ░
+  ░   ░     ░     ░ ░   ░        ░ ░ ░ ▒  ░      ░      ░
+    ░       ░  ░    ░  ░░ ░          ░ ░         ░      ░  ░
+                        ░`}
           </pre>
           <div className="text-[10px] text-zinc-600 tracking-[0.3em] mt-1">ixi_flower — amirabbas rouintan</div>
         </div>
@@ -692,8 +696,8 @@ export default function Home() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-zinc-800/50 border border-zinc-700 p-2">
-                  <div className="text-[10px] text-zinc-400">Coding since 2020 — age 13</div>
-                  <div className="text-sm font-bold text-zinc-100">Born 2007 · 5+ yrs coding</div>
+                  <div className="text-[10px] text-zinc-400">Coding since 2019 — age 12</div>
+                  <div className="text-sm font-bold text-zinc-100">Born 2007 · 6+ yrs coding</div>
                   <div className="text-[10px] text-zinc-500 mt-0.5">{WAKA.total} logged · {WAKA.daily}/day</div>
                 </div>
                 <div className="bg-zinc-800/50 border border-zinc-700 p-2">
@@ -765,8 +769,9 @@ export default function Home() {
                 <span>Playlist</span>
                 <span>{PLAYLIST.length} tracks</span>
               </div>
-              <div className="max-h-[156px] overflow-y-auto custom-scrollbar space-y-1 pr-1">
-                {PLAYLIST.map((t, i) => (
+              <div className="relative">
+                <div className="max-h-[220px] overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
+                  {PLAYLIST.map((t, i) => (
                   <button
                     key={t.title}
                     onClick={() => {
@@ -781,7 +786,9 @@ export default function Home() {
                     </span>
                     <span className="text-[10px] shrink-0 ml-2">{t.dur}</span>
                   </button>
-                ))}
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
               </div>
             </div>
           </Card>

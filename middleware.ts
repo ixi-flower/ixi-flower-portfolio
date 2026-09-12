@@ -1,88 +1,79 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+const COOKIE = "ixi_admin_token";
 
-function isStackConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_STACK_PROJECT_ID && process.env.STACK_SECRET_SERVER_KEY,
-  );
+function isPublicAuthPath(pathname: string): boolean {
+  // login page + auth API are public
+  if (pathname === "/admin/login") return true;
+  if (pathname.startsWith("/api/admin/auth/")) return true;
+  return false;
+}
+
+async function hasValidCookie(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get(COOKIE)?.value;
+  if (!token) return false;
+  const secret = process.env.ADMIN_JWT_SECRET || process.env.ADMIN_SECRET || "dev-secret-change-me";
+  try {
+    await jwtVerify(token, new TextEncoder().encode(secret));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function hasValidSecretHeader(request: NextRequest): boolean {
+  const secret = process.env.ADMIN_SECRET || process.env.IXI_SECRET || process.env.ADMIN_TOKEN;
+  if (!secret) return false;
+  const h =
+    request.headers.get("x-admin-secret") ||
+    request.headers.get("x-ixi-secret") ||
+    request.headers.get("x-admin-token") ||
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (h === secret) return true;
+  const emailHeader = request.headers.get("x-admin-email");
+  const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  if (emailHeader && adminEmail && emailHeader.trim().toLowerCase() === adminEmail) return true;
+  return false;
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only guard /admin and /api/admin
   const isAdminPage = pathname.startsWith("/admin");
   const isAdminApi = pathname.startsWith("/api/admin");
   if (!isAdminPage && !isAdminApi) return NextResponse.next();
 
-  // If Stack Auth is configured, try to use it (best-effort)
-  if (isStackConfigured()) {
+  if (isPublicAuthPath(pathname)) return NextResponse.next();
+
+  // Allow if cookie JWT valid OR legacy secret header (back-compat)
+  if (await hasValidCookie(request)) return NextResponse.next();
+  if (hasValidSecretHeader(request)) return NextResponse.next();
+
+  // Optional Stack Auth when configured
+  const stackConfigured = Boolean(process.env.NEXT_PUBLIC_STACK_PROJECT_ID && process.env.STACK_SECRET_SERVER_KEY);
+  if (stackConfigured) {
     try {
-      // @ts-ignore — optional dep, only when Stack Auth is configured
+      // @ts-ignore optional
       const mod: any = await import("@stackframe/stack" as string).catch(() => null);
       const stackApp = mod?.stackServerApp ?? null;
       if (stackApp) {
         const user = await stackApp.getUser().catch(() => null);
-        const email: string | null =
-          user?.primaryEmail ?? user?.email ?? null;
-        if (email && email.trim().toLowerCase() === ADMIN_EMAIL) {
-          return NextResponse.next();
-        }
-        // Allow secret header override even when Stack is configured
-        const secret = process.env.ADMIN_SECRET || process.env.IXI_SECRET;
-        if (secret) {
-          const h =
-            request.headers.get("x-admin-secret") ||
-            request.headers.get("x-ixi-secret") ||
-            request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-          if (h === secret) return NextResponse.next();
-        }
-        if (isAdminApi) {
-          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
-        return NextResponse.redirect(new URL("/", request.url));
+        const email: string | null = user?.primaryEmail ?? user?.email ?? null;
+        const adminEmail = (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+        if (email && adminEmail && email.trim().toLowerCase() === adminEmail) return NextResponse.next();
       }
-    } catch {
-      // fall through to secret check
-    }
+    } catch {}
   }
 
-  // Fallback: check secret header (dev / pre-Stack)
-  const secret = process.env.ADMIN_SECRET || process.env.IXI_SECRET || process.env.ADMIN_TOKEN;
-  if (secret) {
-    const h =
-      request.headers.get("x-admin-secret") ||
-      request.headers.get("x-ixi-secret") ||
-      request.headers.get("x-admin-token") ||
-      request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    if (h === secret) return NextResponse.next();
-    // Also allow x-admin-email matching ADMIN_EMAIL when no Stack
-    const emailHeader = request.headers.get("x-admin-email");
-    if (emailHeader && emailHeader.trim().toLowerCase() === ADMIN_EMAIL) {
-      return NextResponse.next();
-    }
-  }
-
-  // No valid credentials
   if (isAdminApi) {
-    const hasHeader =
-      request.headers.has("x-admin-secret") ||
-      request.headers.has("x-ixi-secret") ||
-      request.headers.has("authorization");
-    return NextResponse.json(
-      { error: hasHeader ? "Forbidden — invalid credentials" : "Unauthorized" },
-      { status: hasHeader ? 403 : 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  // For admin pages: redirect to home if not owner
-  // In dev without Stack, pages are client-guarded; middleware allows through only with header
-  // For now, allow pages through — client components will handle redirect
-  // But if ADMIN_SECRET is set and no header, block API only (pages handled client-side)
-  // To avoid infinite redirect loops in dev, let pages through
-  return NextResponse.next();
+  // admin pages → redirect to login
+  const url = request.nextUrl.clone();
+  url.pathname = "/admin/login";
+  return NextResponse.redirect(url);
 }
 
 export const config = {
