@@ -216,7 +216,7 @@ export default function AdminSiteContentPage() {
             {/* Bar preview */}
             <div className="h-2 w-full bg-zinc-800 flex overflow-hidden mt-2">
               {waka.langs.map((l, i) => (
-                <div key={i} className={['bg-sky-500', 'bg-yellow-500', 'bg-zinc-500', 'bg-cyan-400', 'bg-zinc-600'][i % 5]} style={{ width: `${l.pct}%` }} />
+                <div key={i} className={['bg-sky-500', 'bg-yellow-500', 'bg-violet-500', 'bg-emerald-500', 'bg-orange-500'][i % 5]} style={{ width: `${l.pct}%` }} />
               ))}
             </div>
             <div className="mt-3 space-y-2">

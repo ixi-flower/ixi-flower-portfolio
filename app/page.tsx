@@ -476,7 +476,6 @@ function Prompt({ cmd }: { cmd: string }) {
 function Card({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <div className={`relative bg-zinc-900/50 border border-zinc-800 overflow-hidden rounded-none hover:border-zinc-700 transition-all duration-300 shadow-md ${className || ""}`}>
-      <Corner />
       <div className="p-3">{children}</div>
     </div>
   );
@@ -707,7 +706,7 @@ export default function Home() {
           {/* WAKATIME */}
           {(() => {
             const wakaData = siteWaka ?? WAKA;
-            const barColors = ["bg-sky-500", "bg-yellow-500", "bg-zinc-500", "bg-cyan-400", "bg-zinc-600"];
+            const barColors = ["bg-sky-500", "bg-yellow-500", "bg-violet-500", "bg-emerald-500", "bg-orange-500"];
             return (
           <Card className="md:col-span-2">
             <Prompt cmd="wakatime --all" />
@@ -830,9 +829,6 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               {REPOS.map((r) => (
                 <div key={r.name} className="border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700 transition-colors relative overflow-hidden group">
-                  <div className="absolute top-1 right-1 text-zinc-700 text-[8px] leading-none pointer-events-none">
-                    <pre>+---+{"\n"}|   |{"\n"}+---+</pre>
-                  </div>
                   <h3 className="font-bold text-sm text-zinc-100 pr-6">{r.name}</h3>
                   <p className="text-xs text-zinc-400 mt-1 line-clamp-3 min-h-[48px]">{r.desc}</p>
                   <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500">
