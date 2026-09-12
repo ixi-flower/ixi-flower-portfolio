@@ -55,8 +55,9 @@ export default function AdminIndex() {
         <button onClick={logout} className="px-3 py-1.5 text-xs border border-zinc-800 text-zinc-500 hover:text-zinc-100 hover:border-zinc-700">Logout</button>
       </div>
 
-      <div className="mt-6 flex gap-3">
+      <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/admin/blog" className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white">Manage blog →</Link>
+        <Link href="/admin/site-content" className="px-4 py-2 border border-zinc-800 text-sm text-zinc-100 hover:bg-zinc-800 hover:border-zinc-700">Site content →</Link>
         <Link href="/" className="px-4 py-2 border border-zinc-800 text-sm text-zinc-400 hover:text-zinc-100 hover:border-zinc-700">Back to site</Link>
       </div>
 

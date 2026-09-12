@@ -7,6 +7,7 @@ import {
   integer,
   index,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 // — Posts (bilingual EN + FA; FA nullable, fallback to EN) —
@@ -76,6 +77,13 @@ export const adminUsers = pgTable("admin_users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const siteSettings = pgTable("site_settings", {
+  key: varchar("key", { length: 80 }).primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type PostRow = typeof posts.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
 export type AdminUserRow = typeof adminUsers.$inferSelect;
+export type SiteSettingRow = typeof siteSettings.$inferSelect;

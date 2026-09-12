@@ -490,11 +490,25 @@ export default function Home() {
   const [blogsExpanded, setBlogsExpanded] = useState(false);
   const [apiPosts, setApiPosts] = useState<ApiPost[] | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [sitePlaylist, setSitePlaylist] = useState<typeof PLAYLIST | null>(null);
+  const [siteWaka, setSiteWaka] = useState<typeof WAKA | null>(null);
+  const [siteTech, setSiteTech] = useState<typeof TECH | null>(null);
 
   useEffect(() => {
     fetch("/api/blog", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => { if (Array.isArray(d.posts) && d.posts.length) setApiPosts(d.posts); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/site-content", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.playlist) && d.playlist.length) setSitePlaylist(d.playlist as typeof PLAYLIST);
+        if (d.waka && typeof d.waka === "object" && d.waka.total) setSiteWaka(d.waka as typeof WAKA);
+        if (Array.isArray(d.tech) && d.tech.length) setSiteTech(d.tech as typeof TECH);
+      })
       .catch(() => {});
   }, []);
 
@@ -666,9 +680,9 @@ export default function Home() {
           <Card className="md:col-span-2">
             <Prompt cmd="ls -la tech/" />
             <div className="grid grid-cols-1 gap-1.5 max-h-[290px] overflow-y-auto custom-scrollbar pr-1">
-              {TECH.map((t: (typeof TECH)[number]) => (
-                <div key={t.name} className="flex justify-between items-center p-2 bg-zinc-800/50 border border-zinc-700 rounded-none hover:bg-zinc-800 transition-colors group">
-                  <div className="flex items-center gap-2">
+              {(siteTech ?? TECH).map((t: (typeof TECH)[number]) => (
+                <div key={t.name} className="flex justify-between items-center p-2 bg-zinc-800/50 border border-zinc-700 rounded-none hover:bg-zinc-800 transition-colors group gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={(t as { icon: string }).icon}
@@ -679,11 +693,11 @@ export default function Home() {
                       style={{ borderColor: t.color }}
                       loading="lazy"
                     />
-                    <span className="text-xs font-medium text-zinc-200">{t.name}</span>
+                    <span className="text-xs font-medium text-zinc-200 truncate">{t.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-400">{t.yrs}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{t.level}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] text-zinc-400 whitespace-nowrap shrink-0">{t.yrs}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none whitespace-nowrap shrink-0">{t.level}</span>
                   </div>
                 </div>
               ))}
@@ -691,18 +705,22 @@ export default function Home() {
           </Card>
 
           {/* WAKATIME */}
+          {(() => {
+            const wakaData = siteWaka ?? WAKA;
+            const barColors = ["bg-sky-500", "bg-yellow-500", "bg-zinc-500", "bg-cyan-400", "bg-zinc-600"];
+            return (
           <Card className="md:col-span-2">
             <Prompt cmd="wakatime --all" />
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-zinc-800/50 border border-zinc-700 p-2">
-                  <div className="text-[10px] text-zinc-400">Coding since 2019 — age 12</div>
-                  <div className="text-sm font-bold text-zinc-100">Born 2007 · 6+ yrs coding</div>
-                  <div className="text-[10px] text-zinc-500 mt-0.5">{WAKA.total} logged · {WAKA.daily}/day</div>
+                <div className="bg-zinc-800/50 border border-zinc-700 p-2 min-w-0 overflow-hidden">
+                  <div className="text-[10px] text-zinc-400 leading-tight">Coding since {wakaData.codingSince} — age 12</div>
+                  <div className="text-[13px] font-bold text-zinc-100 leading-tight break-words">{`Born 2007 · 6+ yrs coding`}</div>
+                  <div className="text-[10px] text-zinc-500 mt-0.5 break-words">{wakaData.total} logged · {wakaData.daily}/day</div>
                 </div>
-                <div className="bg-zinc-800/50 border border-zinc-700 p-2">
+                <div className="bg-zinc-800/50 border border-zinc-700 p-2 min-w-0 overflow-hidden">
                   <div className="text-[10px] text-zinc-400">Daily</div>
-                  <div className="text-sm font-bold text-zinc-100">{WAKA.daily}</div>
+                  <div className="text-sm font-bold text-zinc-100 whitespace-nowrap">{wakaData.daily}</div>
                 </div>
               </div>
               <div className="flex gap-1">
@@ -719,14 +737,12 @@ export default function Home() {
               <div>
                 <div className="text-xs text-zinc-400 mb-1">Top Languages</div>
                 <div className="h-2 w-full bg-zinc-800 flex overflow-hidden rounded-none">
-                  <div className="bg-sky-500" style={{ width: "42%" }} />
-                  <div className="bg-yellow-500" style={{ width: "31%" }} />
-                  <div className="bg-zinc-500" style={{ width: "9%" }} />
-                  <div className="bg-cyan-400" style={{ width: "7%" }} />
-                  <div className="bg-zinc-600" style={{ width: "11%" }} />
+                  {wakaData.langs.map((l, i) => (
+                    <div key={l.name} className={barColors[i % barColors.length]} style={{ width: `${l.pct}%` }} />
+                  ))}
                 </div>
                 <div className="mt-2 space-y-1">
-                  {WAKA.langs.map((l) => (
+                  {wakaData.langs.map((l) => (
                     <div key={l.name} className="flex justify-between text-xs">
                       <span className="text-zinc-300">{l.name}</span>
                       <span className="text-zinc-500">{l.pct}%</span>
@@ -736,22 +752,28 @@ export default function Home() {
               </div>
             </div>
           </Card>
+            );
+          })()}
 
           {/* MUSIC */}
+          {(() => {
+            const pl = sitePlaylist ?? PLAYLIST;
+            const curTrack = pl[cur] ?? pl[0];
+            return (
           <Card className="md:col-span-2">
             <Prompt cmd="mpv --playlist favorites.m3u" />
             <div className="space-y-2">
               <div className="bg-zinc-900 border border-zinc-800 p-2 flex items-center gap-2">
                 <div className="h-10 w-10 bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">♪</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-zinc-100 truncate">{PLAYLIST[cur].title}</div>
-                  <div className="text-xs text-zinc-400 truncate">{PLAYLIST[cur].artist} — 0:00 / {PLAYLIST[cur].dur}</div>
+                  <div className="text-sm font-bold text-zinc-100 truncate">{curTrack.title}</div>
+                  <div className="text-xs text-zinc-400 truncate">{curTrack.artist} — 0:00 / {curTrack.dur}</div>
                   <div className="h-1 bg-zinc-800 mt-1">
                     <div className="h-1 bg-zinc-300" style={{ width: playing ? "38%" : "0%" }} />
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => setCur((c) => (c - 1 + PLAYLIST.length) % PLAYLIST.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
+                  <button onClick={() => setCur((c) => (c - 1 + pl.length) % pl.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
                     ◀
                   </button>
                   <button
@@ -760,18 +782,18 @@ export default function Home() {
                   >
                     {playing ? "❚❚" : "▶"}
                   </button>
-                  <button onClick={() => setCur((c) => (c + 1) % PLAYLIST.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
+                  <button onClick={() => setCur((c) => (c + 1) % pl.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
                     ▶
                   </button>
                 </div>
               </div>
               <div className="flex justify-between text-[10px] text-zinc-500">
                 <span>Playlist</span>
-                <span>{PLAYLIST.length} tracks</span>
+                <span>{pl.length} tracks</span>
               </div>
               <div className="relative">
                 <div className="max-h-[220px] overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
-                  {PLAYLIST.map((t, i) => (
+                  {pl.map((t, i) => (
                   <button
                     key={t.title}
                     onClick={() => {
@@ -792,6 +814,8 @@ export default function Home() {
               </div>
             </div>
           </Card>
+            );
+          })()}
 
           {/* REPOS */}
           <Card className="md:col-span-6">
