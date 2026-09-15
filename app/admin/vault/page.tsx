@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock, Settings2, SlidersHorizontal } from 'lucide-react'
+import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock, Settings2, SlidersHorizontal, Download, Upload, FileJson, FileSpreadsheet } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 type Entry = {
@@ -117,6 +117,13 @@ export default function AdminVaultPage() {
   const [showPw, setShowPw] = useState(false)
   const [genCfg, setGenCfg] = useState<GenCfg>(DEFAULT_GEN_CFG)
   const [genCfgOpen, setGenCfgOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
+  const [importEntries, setImportEntries] = useState<{ title: string; site?: string; username?: string; password: string; notes?: string }[]>([])
+  const [importFileName, setImportFileName] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const st = strength(form.password)
 
   useEffect(() => {
@@ -252,6 +259,99 @@ export default function AdminVaultPage() {
     finally { setSaving(false) }
   }
 
+  async function handleExport(format: 'json' | 'csv' = 'json') {
+    if (items.length === 0) { pushToast({ t: 'err', m: 'Vault empty — nothing to export' }); return }
+    setExporting(true)
+    try {
+      const r = await fetch('/api/admin/vault/export', { cache: 'no-store' })
+      if (!r.ok) { const j = await r.json().catch(() => ({})); pushToast({ t: 'err', m: j.error || 'Export failed' }); return }
+      const data = await r.json()
+      const entries: { title: string; site: string | null; username: string | null; password: string; notes: string | null }[] = data.entries || []
+      if (format === 'csv') {
+        const esc = (v: string | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`
+        const csv = ['title,site,username,password,notes', ...entries.map(e => [esc(e.title), esc(e.site), esc(e.username), esc(e.password), esc(e.notes)].join(','))].join('\n')
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a'); a.href = url; a.download = `ixi-vault-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url)
+        pushToast({ t: 'ok', m: `Exported ${entries.length} → CSV ✓` })
+      } else {
+        const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), count: entries.length, entries }, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a'); a.href = url; a.download = `ixi-vault-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url)
+        pushToast({ t: 'ok', m: `Exported ${entries.length} → JSON ✓` })
+      }
+    } catch { pushToast({ t: 'err', m: 'Export failed — network' }) }
+    finally { setExporting(false) }
+  }
+
+  function parseImportText(text: string, fileName: string): { title: string; site?: string; username?: string; password: string; notes?: string }[] {
+    const trimmed = text.trim()
+    if (!trimmed) return []
+    // try JSON first (unless .csv extension forces CSV)
+    const isCsv = fileName.toLowerCase().endsWith('.csv')
+    if (!isCsv) {
+      try {
+        const parsed: unknown = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) return (parsed as Record<string, unknown>[]).map(r => ({ title: String((r as any).title ?? ''), site: (r as any).site ? String((r as any).site) : undefined, username: (r as any).username ? String((r as any).username) : undefined, password: String((r as any).password ?? ''), notes: (r as any).notes ? String((r as any).notes) : undefined })).filter(r => r.title && r.password)
+        if (parsed && typeof parsed === 'object') {
+          const o = parsed as Record<string, unknown>
+          const arr = (o.entries as unknown[]) ?? (o.vault as unknown[]) ?? (o.items as unknown[])
+          if (Array.isArray(arr)) return (arr as Record<string, unknown>[]).map(r => ({ title: String((r as any).title ?? ''), site: (r as any).site ? String((r as any).site) : undefined, username: (r as any).username ? String((r as any).username) : undefined, password: String((r as any).password ?? ''), notes: (r as any).notes ? String((r as any).notes) : undefined })).filter(r => r.title && r.password)
+        }
+      } catch {}
+    }
+    // CSV fallback: title,site,username,password,notes
+    const lines = text.split(/\r?\n/).filter(l => l.trim())
+    if (lines.length === 0) return []
+    const hasHeader = /title/i.test(lines[0]) && /password/i.test(lines[0])
+    const rows = hasHeader ? lines.slice(1) : lines
+    const splitCsv = (line: string) => {
+      const out: string[] = []; let cur = ''; let inQ = false
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i]
+        if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++ } else inQ = !inQ }
+        else if (c === ',' && !inQ) { out.push(cur); cur = '' }
+        else cur += c
+      }
+      out.push(cur)
+      return out.map(s => s.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+    }
+    const entries: { title: string; site?: string; username?: string; password: string; notes?: string }[] = []
+    for (const line of rows) {
+      const cols = splitCsv(line)
+      if (cols.length < 1) continue
+      const [title, site, username, password, notes] = cols
+      if (!title?.trim() || !password) continue
+      entries.push({ title: title.trim(), site: site?.trim() || undefined, username: username?.trim() || undefined, password, notes: notes?.trim() || undefined })
+    }
+    return entries
+  }
+
+  async function onImportFile(file: File) {
+    setImportFileName(file.name)
+    const text = await file.text()
+    const parsed = parseImportText(text, file.name)
+    setImportEntries(parsed)
+    if (parsed.length === 0) pushToast({ t: 'err', m: 'No valid entries found — need title + password (JSON: {entries:[...]} or CSV header title,site,username,password,notes)' }, 2800)
+    else pushToast({ t: 'ok', m: `Parsed ${parsed.length} entries from ${file.name} ✓` }, 1800)
+  }
+
+  async function handleImport() {
+    if (importEntries.length === 0) { pushToast({ t: 'err', m: 'No entries to import' }); return }
+    if (importMode === 'replace' && !confirm(`Replace mode will DELETE all ${items.length} existing entries and insert ${importEntries.length} from file. Continue?`)) return
+    setImporting(true)
+    try {
+      const url = importMode === 'replace' ? '/api/admin/vault/import?confirm=1' : '/api/admin/vault/import'
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: importMode, entries: importEntries }) })
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok) { pushToast({ t: 'err', m: j.error || 'Import failed' }, 3000); return }
+      pushToast({ t: 'ok', m: `Imported ${j.inserted} entries (${j.mode}) ✓` })
+      setImportOpen(false); setImportEntries([]); setImportFileName('')
+      await load(q)
+    } catch { pushToast({ t: 'err', m: 'Import network error' }) }
+    finally { setImporting(false) }
+  }
+
   if (loading && items.length === 0) {
     return <div className="max-w-5xl mx-auto px-4 py-8"><p className="text-zinc-600 text-sm font-mono animate-pulse">$ vault --list …</p></div>
   }
@@ -266,7 +366,18 @@ export default function AdminVaultPage() {
               <Shield className="h-3 w-3 text-emerald-500" /> AES-256-GCM · key = ADMIN_JWT_SECRET · {items.length} credentials · drag ⋮⋮ to reorder
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <button onClick={() => handleExport('json')} disabled={exporting || items.length === 0} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed" title={items.length === 0 ? 'Vault empty' : 'Export decrypted entries → JSON (owner-only, bulk decrypt)'}>
+                <Download className="h-4 w-4" /> Export
+              </button>
+              <button onClick={() => handleExport('csv')} disabled={exporting || items.length === 0} className="inline-flex items-center gap-1 px-2 py-2 text-xs font-mono border bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30" title="Export → CSV (same data)">
+                <FileSpreadsheet className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <button onClick={() => setImportOpen(v => !v)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border ${importOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700'}`} title="Import JSON or CSV">
+              <Upload className="h-4 w-4" /> Import
+            </button>
             <button onClick={() => setGenCfgOpen(v => !v)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border ${genCfgOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700'}`} title="Generator config">
               <SlidersHorizontal className="h-4 w-4" /> Generator
             </button>
@@ -326,6 +437,58 @@ export default function AdminVaultPage() {
               </button>
               <span className="text-[11px] text-zinc-600 font-mono self-center">Saved to localStorage · used for every Generate</span>
             </div>
+          </div>
+        )}
+
+        {importOpen && (
+          <div className="mb-4 border border-zinc-800 bg-zinc-900 p-4 space-y-3 admin-fade">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-100 font-mono flex items-center gap-2"><Upload className="h-3.5 w-3.5 text-sky-400" /> Import vault</span>
+              <span className="text-[11px] font-mono text-zinc-600">JSON or CSV · max 500/req</span>
+            </div>
+            <input ref={fileInputRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onImportFile(f); e.target.value = '' }} />
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-950 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 text-xs font-mono">
+                <FileJson className="h-3.5 w-3.5" /> Choose file
+              </button>
+              <span className="text-[11px] font-mono text-zinc-600 self-center">{importFileName ? `${importFileName} · ${importEntries.length} parsed` : 'No file — picks .json {entries:[{title,password,site?,username?,notes?}]} or CSV header title,site,username,password,notes'}</span>
+            </div>
+            {importFileName && (
+              <div className="border border-zinc-800 bg-zinc-950 max-h-[160px] overflow-auto custom-scrollbar">
+                <div className="px-3 py-1.5 text-[11px] font-mono text-zinc-500 border-b border-zinc-800 sticky top-0 bg-zinc-950 flex items-center justify-between">
+                  <span>Preview — first 6</span>
+                  <button onClick={() => { setImportEntries([]); setImportFileName('') }} className="text-zinc-600 hover:text-zinc-300">Clear</button>
+                </div>
+                <div className="divide-y divide-zinc-800">
+                  {importEntries.slice(0, 6).map((r, idx) => (
+                    <div key={idx} className="px-3 py-1.5 flex items-center gap-2 text-xs font-mono">
+                      <span className="text-zinc-100 truncate flex-1">{r.title}</span>
+                      <span className="text-zinc-600 truncate hidden sm:inline">{r.site || '—'}</span>
+                      <span className="text-zinc-600 truncate hidden sm:inline">{r.username || '—'}</span>
+                      <span className="text-amber-300/80 tracking-widest">••••</span>
+                    </div>
+                  ))}
+                  {importEntries.length > 6 && <div className="px-3 py-1 text-[11px] font-mono text-zinc-600">… +{importEntries.length - 6} more</div>}
+                </div>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[11px] font-mono text-zinc-500">Mode:</span>
+              <label className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-300 cursor-pointer">
+                <input type="radio" name="importMode" checked={importMode === 'merge'} onChange={() => setImportMode('merge')} className="accent-zinc-100" /> Merge (append)
+              </label>
+              <label className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-300 cursor-pointer">
+                <input type="radio" name="importMode" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} className="accent-red-500" /> Replace (wipe then import)
+              </label>
+              {importMode === 'replace' && <span className="text-[11px] font-mono text-red-400 border border-red-900/50 bg-red-950/20 px-2 py-0.5">Deletes all {items.length} existing!</span>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleImport} disabled={importing || importEntries.length === 0} className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-500 text-zinc-900 text-sm hover:bg-sky-400 disabled:opacity-30 font-mono">
+                <Upload className="h-4 w-4" /> {importing ? 'Importing…' : `Import ${importEntries.length || ''} ${importMode === 'replace' ? '(replace)' : '(merge)'}`.trim()}
+              </button>
+              <button onClick={() => setImportOpen(false)} className="px-3 py-2 border border-zinc-700 text-zinc-400 hover:bg-zinc-800 text-xs font-mono">Close</button>
+            </div>
+            <p className="text-[11px] font-mono text-zinc-600">Import is owner-only · passwords are re-encrypted with AES-256-GCM on the server before insert. Export first if you want a backup.</p>
           </div>
         )}
 
