@@ -161,6 +161,25 @@ export const vaultEntries = pgTable(
   (t) => [index("vault_sort_idx").on(t.sortOrder), index("vault_site_idx").on(t.site)]
 );
 
+// — API tokens (token-based bridge — hash stored, plaintext shown once) —
+export const apiTokens = pgTable(
+  "api_tokens",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: varchar("name", { length: 120 }).notNull(),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull().unique(),
+    prefix: varchar("prefix", { length: 24 }).notNull(), // e.g. ixi_pat_ab12
+    scopes: jsonb("scopes").notNull().$type<string[]>(),
+    lastUsedAt: timestamp("last_used_at"),
+    expiresAt: timestamp("expires_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("api_tokens_prefix_idx").on(t.prefix), index("api_tokens_created_idx").on(t.createdAt)]
+);
+
 export type PostRow = typeof posts.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
 export type AdminUserRow = typeof adminUsers.$inferSelect;
@@ -168,3 +187,4 @@ export type SiteSettingRow = typeof siteSettings.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
 export type BookmarkRow = typeof bookmarks.$inferSelect;
 export type VaultEntryRow = typeof vaultEntries.$inferSelect;
+export type ApiTokenRow = typeof apiTokens.$inferSelect;
