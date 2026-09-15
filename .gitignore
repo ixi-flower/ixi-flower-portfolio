@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local mcp dev — not part of portfolio deploy
+claude-talk-to-figma-mcp/
+*.bak*
