@@ -826,12 +826,14 @@ export default function Home() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img alt="Profile" src={(siteProfile ?? PROFILE).avatar || "/avatar.jpg"} className="object-cover w-full h-full" />
                 </div>
-                <div className="text-left">
+                <div className="text-left min-w-0">
                   <h1 className="text-xl font-bold text-zinc-100 tracking-tight">
                     {(siteProfile ?? PROFILE).handle}
                     <span className="animate-pulse">_</span>
                   </h1>
-                  <p className="text-zinc-400 text-sm">{(siteProfile ?? PROFILE).title}</p>
+                  <p className="text-zinc-100 text-[13px] font-semibold leading-none mt-0.5">Amirabbas Rouintan</p>
+                  <p className="text-zinc-500 text-[10px] leading-none mt-1">ixi_flower · ixiflower · ixi-flower</p>
+                  <p className="text-zinc-400 text-xs mt-1">{(siteProfile ?? PROFILE).title}</p>
                 </div>
               </div>
               <div className="mt-2 text-sm text-zinc-300 text-left border-l-2 border-zinc-700 pl-2 leading-relaxed">
