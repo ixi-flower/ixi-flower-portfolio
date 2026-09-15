@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock } from 'lucide-react'
+import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock, Settings2, SlidersHorizontal } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 type Entry = {
@@ -10,11 +10,66 @@ type Entry = {
   hasPassword?: boolean; password?: string
 }
 
-function genPassword(len = 20) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%_+-='
+type GenCfg = {
+  length: number
+  upper: boolean
+  lower: boolean
+  digits: boolean
+  symbols: boolean
+  symbolSet: string
+  excludeAmbiguous: boolean
+  requireEach: boolean
+}
+
+const DEFAULT_GEN_CFG: GenCfg = {
+  length: 20,
+  upper: true,
+  lower: true,
+  digits: true,
+  symbols: true,
+  symbolSet: '!@#$%_+-=',
+  excludeAmbiguous: false,
+  requireEach: true,
+}
+
+const GEN_CFG_KEY = 'ixi_vault_gen_cfg'
+
+function genPasswordWithCfg(cfg: GenCfg): string {
+  const AMBIGUOUS = new Set('Il1O0o'.split(''))
+  let upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  let lower = 'abcdefghijklmnopqrstuvwxyz'
+  let digits = '0123456789'
+  let symbols = cfg.symbolSet || '!@#$%_+-='
+  if (cfg.excludeAmbiguous) {
+    const strip = (s: string) => [...s].filter(c => !AMBIGUOUS.has(c)).join('')
+    upper = strip(upper); lower = strip(lower); digits = strip(digits); symbols = strip(symbols)
+  }
+  const pools: string[] = []
+  if (cfg.upper) pools.push(upper)
+  if (cfg.lower) pools.push(lower)
+  if (cfg.digits) pools.push(digits)
+  if (cfg.symbols) pools.push(symbols)
+  if (pools.length === 0) pools.push(upper + lower + digits)
+  const charset = pools.join('')
+  const len = Math.max(4, Math.min(128, cfg.length | 0))
   const a = new Uint8Array(len)
   crypto.getRandomValues(a)
-  return Array.from(a, b => chars[b % chars.length]).join('')
+  const out = Array.from(a, b => charset[b % charset.length])
+  if (cfg.requireEach && pools.length > 1 && len >= pools.length) {
+    // guarantee at least one of each selected pool
+    for (let i = 0; i < pools.length; i++) {
+      const pool = pools[i]
+      const pos = a[i] % len
+      const pick = pool[crypto.getRandomValues(new Uint8Array(1))[0] % pool.length]
+      out[pos] = pick
+    }
+  }
+  return out.join('')
+}
+
+// compat wrapper for old call sites
+function genPassword(len = 20) {
+  return genPasswordWithCfg({ ...DEFAULT_GEN_CFG, length: len })
 }
 
 function strength(pw: string): { label: string; pct: number; color: string } {
@@ -60,7 +115,19 @@ export default function AdminVaultPage() {
 
   const [form, setForm] = useState({ title: '', site: '', username: '', password: '', notes: '' })
   const [showPw, setShowPw] = useState(false)
+  const [genCfg, setGenCfg] = useState<GenCfg>(DEFAULT_GEN_CFG)
+  const [genCfgOpen, setGenCfgOpen] = useState(false)
   const st = strength(form.password)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(GEN_CFG_KEY)
+      if (raw) setGenCfg(prev => ({ ...prev, ...JSON.parse(raw) }))
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try { localStorage.setItem(GEN_CFG_KEY, JSON.stringify(genCfg)) } catch {}
+  }, [genCfg])
 
   const load = useCallback(async (query?: string) => {
     setLoading(true); setErr('')
@@ -199,10 +266,68 @@ export default function AdminVaultPage() {
               <Shield className="h-3 w-3 text-emerald-500" /> AES-256-GCM · key = ADMIN_JWT_SECRET · {items.length} credentials · drag ⋮⋮ to reorder
             </p>
           </div>
-          <button onClick={openAdd} className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white font-mono">
-            <Plus className="h-4 w-4" /> New entry
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setGenCfgOpen(v => !v)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border ${genCfgOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700'}`} title="Generator config">
+              <SlidersHorizontal className="h-4 w-4" /> Generator
+            </button>
+            <button onClick={openAdd} className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white font-mono">
+              <Plus className="h-4 w-4" /> New entry
+            </button>
+          </div>
         </div>
+
+        {genCfgOpen && (
+          <div className="mb-4 border border-zinc-800 bg-zinc-900 p-4 space-y-3 admin-fade">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-100 font-mono flex items-center gap-2"><Settings2 className="h-3.5 w-3.5 text-amber-500" /> Generator config</span>
+              <button onClick={() => setGenCfg(DEFAULT_GEN_CFG)} className="text-[11px] font-mono text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-2 py-1 hover:bg-zinc-800">Reset defaults</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-[11px] text-zinc-500 font-mono">Length: {genCfg.length}</span>
+                <input type="range" min={4} max={64} value={genCfg.length} onChange={e => setGenCfg(c => ({ ...c, length: parseInt(e.target.value) || 20 }))} className="w-full mt-1 accent-zinc-100" />
+                <div className="flex gap-2 mt-1">
+                  <input type="number" min={4} max={128} value={genCfg.length} onChange={e => setGenCfg(c => ({ ...c, length: Math.max(4, Math.min(128, parseInt(e.target.value) || 0)) }))} className="w-20 bg-zinc-950 border border-zinc-800 px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none focus:border-zinc-600" />
+                  <span className="text-[11px] text-zinc-600 font-mono self-center">4 – 128 chars · entropy ≈ {(Math.log2((() => { let n=0; if(genCfg.upper) n+=26; if(genCfg.lower) n+=26; if(genCfg.digits) n+=10; if(genCfg.symbols) n+= (genCfg.symbolSet||'!@#$%_+-=').length; if(genCfg.excludeAmbiguous) n=Math.max(1,n-6); return Math.max(1,n) })()) * genCfg.length).toFixed(1)} bits</span>
+                </div>
+              </label>
+              <div className="space-y-2">
+                <span className="text-[11px] text-zinc-500 font-mono block">Character sets</span>
+                {([
+                  ['upper','A–Z (uppercase)'],
+                  ['lower','a–z (lowercase)'],
+                  ['digits','0–9 (digits)'],
+                  ['symbols','Symbols'],
+                ] as const).map(([k,label]) => (
+                  <label key={k} className="flex items-center gap-2 text-xs font-mono text-zinc-300 cursor-pointer">
+                    <input type="checkbox" checked={(genCfg as any)[k]} onChange={e => setGenCfg(c => ({ ...c, [k]: e.target.checked }))} className="h-3.5 w-3.5 accent-zinc-100 bg-zinc-900 border-zinc-700" />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label className="block">
+              <span className="text-[11px] text-zinc-500 font-mono">Symbols set {genCfg.symbols ? '' : '(ignored — symbols off)'}</span>
+              <input value={genCfg.symbolSet} onChange={e => setGenCfg(c => ({ ...c, symbolSet: e.target.value }))} placeholder="!@#$%_+-=" className="mt-1 w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono disabled:opacity-40" disabled={!genCfg.symbols} />
+            </label>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-xs font-mono text-zinc-300 cursor-pointer">
+                <input type="checkbox" checked={genCfg.excludeAmbiguous} onChange={e => setGenCfg(c => ({ ...c, excludeAmbiguous: e.target.checked }))} className="h-3.5 w-3.5 accent-zinc-100" />
+                Exclude ambiguous <span className="text-zinc-600">Il1O0o</span>
+              </label>
+              <label className="flex items-center gap-2 text-xs font-mono text-zinc-300 cursor-pointer">
+                <input type="checkbox" checked={genCfg.requireEach} onChange={e => setGenCfg(c => ({ ...c, requireEach: e.target.checked }))} className="h-3.5 w-3.5 accent-zinc-100" />
+                Require each selected set
+              </label>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => { const pw = genPasswordWithCfg(genCfg); setForm(f => ({ ...f, password: pw })); if (!modalOpen) setModalOpen(true); pushToast({ t: 'ok', m: `Generated preview · ${pw.length} chars` }, 1800) }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-900 text-xs hover:bg-white font-mono">
+                <RefreshCw className="h-3 w-3" /> Preview generate
+              </button>
+              <span className="text-[11px] text-zinc-600 font-mono self-center">Saved to localStorage · used for every Generate</span>
+            </div>
+          </div>
+        )}
 
         {err && <div className="border border-red-900/50 bg-red-950/30 text-red-300 text-sm px-4 py-3 mb-4 font-mono">{err}</div>}
         {msg && <div className={`text-xs px-3 py-2 border font-mono mb-3 ${msg.t === 'ok' ? 'border-emerald-900/50 bg-emerald-950/30 text-emerald-300' : 'border-red-900/50 bg-red-950/30 text-red-300'}`}>{msg.m}</div>}
@@ -313,7 +438,7 @@ export default function AdminVaultPage() {
             <label className="block">
               <span className="text-[11px] text-zinc-500 font-mono flex items-center justify-between">
                 <span>Password {editingId ? '(leave empty to keep)' : '*'}</span>
-                <button type="button" onClick={() => setForm(f => ({ ...f, password: genPassword(20) }))} className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200"> <RefreshCw className="h-3 w-3" /> Generate</button>
+                <button type="button" onClick={() => setForm(f => ({ ...f, password: genPasswordWithCfg(genCfg) }))} className="inline-flex items-center gap-1 text-[11px] text-amber-300 hover:text-amber-200" title={`Generate ${genCfg.length} chars · ${[genCfg.upper&&'A-Z',genCfg.lower&&'a-z',genCfg.digits&&'0-9',genCfg.symbols&&genCfg.symbolSet].filter(Boolean).join(' ') || '—'}`}> <RefreshCw className="h-3 w-3" /> Generate</button>
               </span>
               <div className="mt-1 flex gap-2">
                 <input type={showPw ? 'text' : 'password'} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder={editingId ? '•••••••• (keep)' : 'very-strong-password'} className="flex-1 bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono" />
