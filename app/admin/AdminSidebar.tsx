@@ -26,6 +26,7 @@ import {
   FilePlus,
   FolderPlus,
   GripVertical,
+  KeyRound,
 } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
@@ -586,6 +587,10 @@ function SidebarInner({ onLogout }: { onLogout: () => void }) {
       <Link href="/admin/bookmarks" className={`${linkBase} ${pathname.startsWith('/admin/bookmarks') ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-sm' : 'bg-transparent text-zinc-400 border-transparent hover:text-zinc-100 hover:bg-zinc-900 hover:border-zinc-800'}`}>
         <Bookmark className="h-3.5 w-3.5 shrink-0" /> Bookmarks
       </Link>
+
+      <Link href="/admin/vault" className={`${linkBase} ${pathname.startsWith('/admin/vault') ? 'bg-zinc-100 text-zinc-900 border-zinc-100 shadow-sm' : 'bg-transparent text-zinc-400 border-transparent hover:text-zinc-100 hover:bg-zinc-900 hover:border-zinc-800'}`}>
+        <KeyRound className="h-3.5 w-3.5 shrink-0" /> Vault
+      </Link>
     </>
   )
 }
@@ -891,6 +896,9 @@ function MobileSidebarInner({ onNavigate, onLogout }: { onNavigate: () => void; 
 
       <Link href="/admin/bookmarks" onClick={onNavigate} className={`${linkBase} ${pathname.startsWith('/admin/bookmarks') ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-transparent text-zinc-400 border-transparent hover:text-zinc-100 hover:bg-zinc-900 hover:border-zinc-800'}`}>
         <Bookmark className="h-3.5 w-3.5 shrink-0" /> Bookmarks
+      </Link>
+      <Link href="/admin/vault" onClick={onNavigate} className={`${linkBase} ${pathname.startsWith('/admin/vault') ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'bg-transparent text-zinc-400 border-transparent hover:text-zinc-100 hover:bg-zinc-900 hover:border-zinc-800'}`}>
+        <KeyRound className="h-3.5 w-3.5 shrink-0" /> Vault
       </Link>
       <Link href="/" onClick={onNavigate} className="flex items-center gap-2.5 px-3 py-2 text-xs font-mono text-zinc-500 hover:text-zinc-200 transition-colors duration-200">
         <ExternalLink className="h-3.5 w-3.5" /> Back to site

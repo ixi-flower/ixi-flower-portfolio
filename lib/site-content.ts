@@ -73,6 +73,7 @@ export const coursesSchema = z
       year: z.string().max(20),
       link: z.string().url().max(500).optional().or(z.literal("")),
       status: z.enum(["completed", "in-progress"]).default("completed"),
+      details: z.array(z.string().max(200)).max(10).optional(),
     }),
   )
   .max(50);
@@ -89,14 +90,21 @@ export const profileSchema = z.object({
       z.object({
         label: z.string().max(40),
         href: z.string().url().max(500),
-        icon: z.enum(["github", "twitter", "linkedin", "mail", "youtube"]),
+        icon: z.enum(["github", "twitter", "linkedin", "mail", "youtube", "telegram"]),
         command: z.string().max(40),
       }),
     )
     .max(8),
 });
 
-export const VALID_KEYS = ["playlist", "waka", "tech", "courses", "profile"] as const;
+export const bannerSchema = z.object({
+  enabled: z.boolean(),
+  text: z.string().max(200),
+  link: z.string().url().max(2000).optional().or(z.literal("")),
+  dismissible: z.boolean().optional(),
+});
+
+export const VALID_KEYS = ["playlist", "waka", "tech", "courses", "profile", "banner"] as const;
 export type SiteContentKey = (typeof VALID_KEYS)[number];
 
 const schemas: Record<SiteContentKey, z.ZodTypeAny> = {
@@ -105,6 +113,7 @@ const schemas: Record<SiteContentKey, z.ZodTypeAny> = {
   tech: techSchema,
   courses: coursesSchema,
   profile: profileSchema,
+  banner: bannerSchema,
 };
 
 export function isValidKey(k: string): k is SiteContentKey {
@@ -194,16 +203,16 @@ export const DEFAULT_WAKA = {
 } as const;
 
 export const DEFAULT_COURSES = [
-  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed" as const },
-  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed" as const },
-  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed" as const },
-  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed" as const },
-  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed" as const },
-  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed" as const },
-  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed" as const },
-  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed" as const },
-  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed" as const },
-  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed" as const },
+  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed" as const, details: ["Python fundamentals through advanced topics", "OOP, decorators, generators, testing"] as const },
+  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed" as const, details: ["Web security fundamentals", "OWASP Top 10 vulnerabilities", "Ethical hacking methodology"] as const },
+  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed" as const, details: ["Ethical hacking methodology & tools", "Reconnaissance, scanning, exploitation", "Post-exploitation & reporting"] as const },
+  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed" as const, details: ["Threats, attacks & vulnerabilities", "Architecture & design", "Cryptography & PKI"] as const },
+  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed" as const, details: ["Linux system administration", "Command line, shell scripting", "System maintenance & security"] as const },
+  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed" as const, details: ["Networking concepts & protocols", "Infrastructure & troubleshooting", "Network security fundamentals"] as const },
+  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed" as const, details: ["Advanced Python programming", "AsyncIO, networking, APIs", "Real-world project-based learning"] as const },
+  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed" as const, details: ["Containerization with Docker", "Orchestration with Kubernetes", "CI/CD pipeline integration"] as const },
+  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed" as const, details: ["Network discovery & scanning", "NSE scripting engine", "Vulnerability assessment techniques"] as const },
+  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed" as const, details: ["Modern React with hooks & context", "State management & routing", "Component design patterns"] as const },
 ] as const;
 
 export const DEFAULT_TECH = [
@@ -231,7 +240,15 @@ export const DEFAULT_PROFILE = {
     { label: "GitHub", href: "https://github.com/ixiflower", icon: "github" as const, command: "open github" },
     { label: "Twitter", href: "https://x.com/ixi_flower0", icon: "twitter" as const, command: "open twitter" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/amirabbas-rouintan", icon: "linkedin" as const, command: "open linkedin" },
+    { label: "Telegram", href: "https://t.me/ixi_flower", icon: "telegram" as const, command: "open telegram" },
     { label: "YouTube", href: "https://www.youtube.com/@ixi_flower0", icon: "youtube" as const, command: "open youtube" },
     { label: "Email", href: "mailto:amirabbas.rouintan2007@gmail.com", icon: "mail" as const, command: "send email" },
   ],
+} as const;
+
+export const DEFAULT_BANNER = {
+  enabled: false,
+  text: "",
+  link: "",
+  dismissible: true,
 } as const;

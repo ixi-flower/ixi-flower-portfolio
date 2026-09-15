@@ -13,6 +13,7 @@ const PROFILE = {
     { label: "GitHub", href: "https://github.com/ixiflower", icon: "github", command: "open github" },
     { label: "Twitter", href: "https://x.com/ixi_flower0", icon: "twitter", command: "open twitter" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/amirabbas-rouintan", icon: "linkedin", command: "open linkedin" },
+    { label: "Telegram", href: "https://t.me/ixi_flower", icon: "telegram", command: "open telegram" },
     { label: "Email", href: "mailto:amirabbas.rouintan2007@gmail.com", icon: "mail", command: "send email" },
   ] as const,
 };
@@ -58,21 +59,22 @@ const WAKA = {
   ],
 };
 
-type Course = { title: string; provider: string; year: string; link?: string; status: "completed" | "in-progress" };
+type Course = { title: string; provider: string; year: string; link?: string; status: "completed" | "in-progress"; details?: string[] };
 const COURSES: Course[] = [
-  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed" },
-  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed" },
-  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed" },
-  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed" },
-  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed" },
-  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed" },
-  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed" },
-  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed" },
-  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed" },
-  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed" },
+  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed", details: ["Python fundamentals through advanced topics", "OOP, decorators, generators, testing"] },
+  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed", details: ["Web security fundamentals", "OWASP Top 10 vulnerabilities", "Ethical hacking methodology"] },
+  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed", details: ["Ethical hacking methodology & tools", "Reconnaissance, scanning, exploitation", "Post-exploitation & reporting"] },
+  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed", details: ["Threats, attacks & vulnerabilities", "Architecture & design", "Cryptography & PKI"] },
+  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed", details: ["Linux system administration", "Command line, shell scripting", "System maintenance & security"] },
+  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed", details: ["Networking concepts & protocols", "Infrastructure & troubleshooting", "Network security fundamentals"] },
+  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed", details: ["Advanced Python programming", "AsyncIO, networking, APIs", "Real-world project-based learning"] },
+  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed", details: ["Containerization with Docker", "Orchestration with Kubernetes", "CI/CD pipeline integration"] },
+  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed", details: ["Network discovery & scanning", "NSE scripting engine", "Vulnerability assessment techniques"] },
+  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed", details: ["Modern React with hooks & context", "State management & routing", "Component design patterns"] },
 ];
 
 type PlaylistTrack = { title: string; artist: string; dur: string; url?: string };
+type BannerData = { enabled: boolean; text: string; link?: string; dismissible?: boolean };
 const PLAYLIST: PlaylistTrack[] = [
   { title: "AYNEH", artist: "Bahram", dur: "3:16" },
   { title: "Enfejare Rangha", artist: "Bahram", dur: "4:02" },
@@ -87,10 +89,17 @@ const PLAYLIST: PlaylistTrack[] = [
 ];
 
 const REPOS = [
-  { name: "jitsi-infinity", desc: "Jitsi Meet on Docker with custom Python auto-scaler — production-ready autoscaling, Jibri, recording.", lang: "Python", stars: 3, forks: 1 },
+  { name: "jitsi-infinity", desc: "Production-ready video conferencing stack — Jitsi Meet on Docker with a Python auto-scaler, recording, monitoring dashboards, and auto-scaling infrastructure.", lang: "Python", stars: 2, forks: 1 },
   { name: "shopify-frost", desc: "A headless Shopify Hydrogen storefront with glassmorphism design and full cart/checkout.", lang: "TypeScript", stars: 1, forks: 0 },
-  { name: "trademind-bot", desc: "AI-powered trading signal bot for Pocket Option & binary options — 8-factor scoring.", lang: "Python", stars: 1, forks: 1 },
-  { name: "ixi-News-BOT", desc: "Persian news bot — fetches and delivers the latest headlines via Telegram.", lang: "Python", stars: 1, forks: 0 },
+  { name: "trademind-bot", desc: "AI-powered trading signal bot for Pocket Option & binary options. Multi-indicator technical analysis across Crypto, Forex, Stocks, and Commodities with real-time alerts.", lang: "Python", stars: 1, forks: 1 },
+  { name: "ixi-News-BOT", desc: "A Python-powered Telegram news bot that fetches and delivers the latest headlines directly to your chat — automatic updates, category filtering, and clean formatting.", lang: "Python", stars: 1, forks: 0 },
+  { name: "Storipalorium", desc: "A contemplative, minimal bookmark and snippet storage app — full-text search, tag organization, and a clean reading-focused interface. Built with Next.js and Neon Auth.", lang: "TypeScript", stars: 0, forks: 0 },
+  { name: "Shimer", desc: "A powerful time-tracking and productivity app built from scratch with React Native (Expo) — timer, goals, analytics, calendar, secure vault, and backup. Fully offline-first.", lang: "TypeScript", stars: 0, forks: 0 },
+  { name: "BotU", desc: "A no-code Telegram bot builder platform with AI-powered assistance. Build, configure, and manage Telegram bots visually through a web dashboard. Powered by React, Django, and Gemini AI.", lang: "TypeScript", stars: 0, forks: 0 },
+  { name: "serene", desc: "Premium Shopify Hydrogen storefront with atmospheric hero section, glassmorphic design, full cart system, and live Storefront API product integration — the flagship ecommerce build.", lang: "TypeScript", stars: 0, forks: 0 },
+  { name: "polybot-tg", desc: "Telegram bot that auto-fetches MTProto proxies & V2Ray configs, pings them for latency, and posts the best ones to your channel — with a real-time inline admin panel.", lang: "Python", stars: 0, forks: 0 },
+  { name: "sofra", desc: "Premium Shopify Hydrogen furniture storefront — handcrafted pieces with Shopify's Storefront API, full cart system, collections, and a soulful design aesthetic.", lang: "TypeScript", stars: 0, forks: 0 },
+  { name: "earth-explorer", desc: "Interactive 3D globe with location search — drag, zoom, and click any city or country. Built with globe.gl (Three.js) and Nominatim geocoding. Features fly-to animations, marker pins, and a cyberpunk dark theme.", lang: "JavaScript", stars: 0, forks: 0 },
 ];
 
 type LegacyBlog = { slug: string; title: string; date: string; excerpt: string; tag: string; readTime: string; content: string[] };
@@ -187,8 +196,41 @@ const PROJECTS: Project[] = [
   {
     title: "Storipalorium",
     iframe: "https://storipalorium.vercel.app",
-    tags: ["Next.js", "Minimal", "Story"],
+    tags: ["Next.js", "Neon Auth", "Drizzle"],
     demo: "https://storipalorium.vercel.app",
+    source: "https://github.com/ixiflower/Storipalorium",
+    status: "Active",
+  },
+  {
+    title: "BotU",
+    iframe: "https://freaky-botu.netlify.app",
+    tags: ["React", "Django", "Gemini AI"],
+    demo: "https://freaky-botu.netlify.app",
+    source: "https://github.com/ixiflower/BotU",
+    status: "Active",
+  },
+  {
+    title: "SERENE",
+    iframe: "https://serene-two-azure.vercel.app",
+    tags: ["Hydrogen", "React Router", "Tailwind"],
+    demo: "https://serene-two-azure.vercel.app",
+    source: "https://github.com/ixiflower/serene",
+    status: "Active",
+  },
+  {
+    title: "Sofra",
+    iframe: "https://sofra-three.vercel.app",
+    tags: ["Hydrogen", "Shopify", "React Router"],
+    demo: "https://sofra-three.vercel.app",
+    source: "https://github.com/ixiflower/sofra",
+    status: "Active",
+  },
+  {
+    title: "Earth Explorer",
+    iframe: "https://earth-explorer-eight.vercel.app",
+    tags: ["Three.js", "globe.gl", "JavaScript"],
+    demo: "https://earth-explorer-eight.vercel.app",
+    source: "https://github.com/ixiflower/earth-explorer",
     status: "Active",
   },
 ];
@@ -292,6 +334,14 @@ function IconMail(props: { className?: string }) {
     </svg>
   );
 }
+function IconTelegram(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </svg>
+  );
+}
 function IconYoutube(props: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={props.className}>
@@ -303,15 +353,17 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
   github: IconGithub,
   twitter: IconTwitter,
   linkedin: IconLinkedin,
+  telegram: IconTelegram,
   mail: IconMail,
   youtube: IconYoutube,
 };
 
-// footer ssh-connect --social — always includes YouTube (PROFILE top card does NOT)
+// footer ssh-connect --social — always includes YouTube + Telegram (PROFILE top card hides YouTube only)
 const FOOTER_SOCIALS_BASE = [
   { label: "GitHub", href: "https://github.com/ixiflower", icon: "github" },
   { label: "Twitter", href: "https://x.com/ixi_flower0", icon: "twitter" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/amirabbas-rouintan", icon: "linkedin" },
+  { label: "Telegram", href: "https://t.me/ixi_flower", icon: "telegram" },
   { label: "YouTube", href: "https://www.youtube.com/@ixi_flower0", icon: "youtube" },
   { label: "Email", href: "mailto:amirabbas.rouintan2007@gmail.com", icon: "mail" },
 ] as const;
@@ -769,6 +821,8 @@ export default function Home() {
   const [siteTech, setSiteTech] = useState<typeof TECH | null>(null);
   const [siteCourses, setSiteCourses] = useState<typeof COURSES | null>(null);
   const [siteProfile, setSiteProfile] = useState<typeof PROFILE | null>(null);
+  const [siteBanner, setSiteBanner] = useState<BannerData | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     fetch("/api/blog", { cache: "no-store" })
@@ -786,8 +840,15 @@ export default function Home() {
         if (Array.isArray(d.tech) && d.tech.length) setSiteTech(d.tech as typeof TECH);
         if (Array.isArray(d.courses) && d.courses.length) setSiteCourses(d.courses as typeof COURSES);
         if (d.profile && typeof d.profile === "object" && (d.profile as Record<string, unknown>).handle) setSiteProfile(d.profile as typeof PROFILE);
+        if (d.banner && typeof d.banner === "object" && typeof (d.banner as BannerData).text === "string") setSiteBanner(d.banner as BannerData);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("ixi_banner_dismissed") === "1") setBannerDismissed(true);
+    } catch {}
   }, []);
 
   // keep audio in sync with play/cur state (auto-play next track)
@@ -800,6 +861,30 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-200 p-3 font-mono">
       <div className="mx-auto max-w-5xl">
+        {siteBanner?.enabled && siteBanner.text && !bannerDismissed && (
+          <div className="mb-3 flex items-center justify-center gap-2 border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-mono">
+            <span className="text-zinc-500">[ banner ]</span>
+            {siteBanner.link ? (
+              <a href={siteBanner.link} target="_blank" rel="noopener noreferrer" className="text-zinc-200 hover:text-white underline underline-offset-2 decoration-zinc-600 hover:decoration-zinc-300">
+                {siteBanner.text}
+              </a>
+            ) : (
+              <span className="text-zinc-200">{siteBanner.text}</span>
+            )}
+            {siteBanner.dismissible !== false && (
+              <button
+                onClick={() => {
+                  setBannerDismissed(true);
+                  try { localStorage.setItem("ixi_banner_dismissed", "1"); } catch {}
+                }}
+                aria-label="Dismiss banner"
+                className="ml-auto shrink-0 border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+              >
+                [×]
+              </button>
+            )}
+          </div>
+        )}
         {/* ASCII header - hidden on mobile like original */}
         <div className="hidden md:flex flex-col items-center text-center mb-4 text-zinc-500 px-2">
           <pre className="inline-block text-left whitespace-pre leading-none font-mono text-zinc-500 text-[7px] tracking-tight" style={{ fontVariantLigatures: "none", textRendering: "geometricPrecision" }}>
@@ -1152,20 +1237,23 @@ export default function Home() {
               </a>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              {REPOS.map((r) => (
+              {REPOS.map((r) => {
+                const dot = r.lang === "Python" ? "#3572A5" : r.lang === "JavaScript" ? "#f7df1e" : "#3178c6";
+                return (
                 <div key={r.name} className="border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700 transition-colors relative overflow-hidden group">
                   <h3 className="font-bold text-sm text-zinc-100 pr-6">{r.name}</h3>
                   <p className="text-xs text-zinc-400 mt-1 line-clamp-3 min-h-[48px]">{r.desc}</p>
                   <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500">
                     <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full" style={{ background: r.lang === "Python" ? "#3572A5" : "#3178c6" }} /> {r.lang}
+                      <span className="h-2 w-2 rounded-full" style={{ background: dot }} /> {r.lang}
                     </span>
                     <span className="flex items-center gap-1">★ {r.stars}</span>
                     <span className="flex items-center gap-1">⑂ {r.forks}</span>
                   </div>
                   <a href={`https://github.com/ixiflower/${r.name}`} target="_blank" className="absolute inset-0" aria-label={r.name} />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
 
@@ -1242,7 +1330,8 @@ export default function Home() {
             <div className="relative">
               <div className="max-h-[320px] overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
                 {(siteCourses ?? COURSES).map((c, i) => (
-                  <div key={`${c.title}-${i}`} className="flex items-center justify-between gap-2 p-2 bg-zinc-800/50 border border-zinc-800 hover:border-zinc-600 transition-colors">
+                  <div key={`${c.title}-${i}`} className="p-2 bg-zinc-800/50 border border-zinc-800 hover:border-zinc-600 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       {c.link ? (
                         <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-zinc-200 hover:text-white hover:underline truncate block">
@@ -1265,6 +1354,16 @@ export default function Home() {
                         {c.status === "completed" ? "completed" : "in-progress"}
                       </span>
                     </div>
+                    </div>
+                    {(c as { details?: string[] }).details?.length ? (
+                      <ul className="mt-2 space-y-1 border-t border-zinc-800 pt-2">
+                        {(c as { details?: string[] }).details!.map((d) => (
+                          <li key={d} className="text-[11px] text-zinc-500 flex items-start gap-1.5 leading-relaxed">
+                            <span className="mt-[7px] h-1 w-1 rounded-full bg-zinc-600 shrink-0" /> {d}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                 ))}
                 {(siteCourses ?? COURSES).length === 0 && <p className="text-zinc-600 text-xs text-center py-6">No courses yet.</p>}

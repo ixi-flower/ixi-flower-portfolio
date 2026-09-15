@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   if (key) {
     if (!isValidKey(key)) {
-      return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech | courses | profile | banner" }, { status: 400 });
     }
     const value = await getSiteContent(key);
     // Return { key: value } so client can do data[key] regardless of single vs all

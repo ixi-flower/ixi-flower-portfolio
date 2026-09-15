@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import AdminSidebar from './AdminSidebar'
 
 export default function AdminGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -22,6 +23,7 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
   }, [pathname, isLoginPage, router])
 
   if (isLoginPage) return <>{children}</>
+
   if (checking) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -36,5 +38,10 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
-  return <>{children}</>
+  return (
+    <>
+      <AdminSidebar />
+      <div className="md:pl-56">{children}</div>
+    </>
+  )
 }

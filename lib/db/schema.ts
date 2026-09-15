@@ -140,9 +140,31 @@ export const bookmarks = pgTable(
   (t) => [index("bookmarks_sort_idx").on(t.sortOrder), index("bookmarks_folder_idx").on(t.folder)]
 );
 
+// — Vault (high-security password manager — AES-256-GCM, key = ADMIN_JWT_SECRET) —
+export const vaultEntries = pgTable(
+  "vault_entries",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    title: varchar("title", { length: 240 }).notNull(),
+    site: varchar("site", { length: 500 }),
+    username: varchar("username", { length: 240 }),
+    encCiphertext: text("enc_ciphertext").notNull(), // base64
+    encIv: text("enc_iv").notNull(), // base64 (12 bytes)
+    encTag: text("enc_tag").notNull(), // base64 (16 bytes, GCM auth tag)
+    notes: varchar("notes", { length: 500 }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("vault_sort_idx").on(t.sortOrder), index("vault_site_idx").on(t.site)]
+);
+
 export type PostRow = typeof posts.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
 export type AdminUserRow = typeof adminUsers.$inferSelect;
 export type SiteSettingRow = typeof siteSettings.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
 export type BookmarkRow = typeof bookmarks.$inferSelect;
+export type VaultEntryRow = typeof vaultEntries.$inferSelect;

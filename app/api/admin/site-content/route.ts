@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get("key")?.trim();
   if (key) {
     if (!isValidKey(key)) {
-      return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech | courses | profile | banner" }, { status: 400 });
     }
     const value = await getSiteContent(key);
     return NextResponse.json({ key, value });
@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest) {
   }
   const key = String(body.key).trim();
   if (!isValidKey(key)) {
-    return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid key — expected playlist | waka | tech | courses | profile | banner" }, { status: 400 });
   }
 
   const parsed = validateSiteContent(key, body.value);

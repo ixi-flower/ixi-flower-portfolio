@@ -159,16 +159,35 @@ export default function BlogForm({ post }: { post?: PostWithTags }) {
       </label>
 
       <label className="block">
-        <span className="text-xs text-zinc-500 mb-1 block">Cover image</span>
+        <span className="text-xs text-zinc-500 mb-1 block">Cover image — poster <span className="text-zinc-600 font-mono">(optional)</span></span>
+        <span className="text-[11px] text-zinc-600 font-mono block mb-2">Leave empty for no cover. Upload picks the poster image — or paste a URL.</span>
         <div className="flex gap-2 items-start">
-          <input value={coverUrl} onChange={e => setCoverUrl(e.target.value)} className={inputCls} dir="ltr" placeholder="https://… or upload" />
+          <input value={coverUrl} onChange={e => setCoverUrl(e.target.value)} className={inputCls} dir="ltr" placeholder="https://… or upload (optional)" />
           <label className="px-3 py-2 text-xs border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 cursor-pointer shrink-0">
             {uploading ? `${uploadProgress}%` : 'Upload'}
             <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); e.target.value = '' }} />
           </label>
+          {coverUrl && (
+            <button
+              type="button"
+              onClick={() => { setCoverUrl(''); setCoverPublicId('') }}
+              className="px-3 py-2 text-xs border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900 shrink-0"
+              title="Remove cover — post will have no poster"
+            >
+              Remove
+            </button>
+          )}
         </div>
         {uploading && <div className="mt-2 h-1 bg-zinc-800 overflow-hidden"><div className="h-full bg-zinc-100 transition-[width] duration-200" style={{ width: `${uploadProgress}%` }} /></div>}
-        {coverUrl && <img src={coverUrl} alt="cover preview" className="mt-2 h-28 object-cover border border-zinc-800" />}
+        {coverUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverUrl} alt="cover preview" className="mt-2 h-28 object-cover border border-zinc-800" />
+            <p className="text-[11px] text-zinc-600 mt-1 font-mono">Poster will show on blog list & detail. Click Remove to post without a poster.</p>
+          </>
+        ) : (
+          <p className="text-[11px] text-zinc-600 mt-2 font-mono border border-dashed border-zinc-800 px-3 py-2 bg-zinc-900/40">No poster — blog will render without a cover image. You can add one anytime.</p>
+        )}
         {coverPublicId && <div className="text-[10px] text-zinc-600 mt-1 font-mono">{coverPublicId}</div>}
       </label>
 

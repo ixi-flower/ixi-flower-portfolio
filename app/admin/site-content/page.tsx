@@ -9,8 +9,9 @@ type WakaData = { total: string; daily: string; codingSince: string; age: string
 type TechItem = { name: string; yrs: string; level: 'Advanced' | 'Intermediate' | 'Beginner'; color: string; icon: string; invert?: boolean }
 type CourseItem = { title: string; provider: string; year: string; link?: string; status: "completed" | "in-progress" }
 
-type Tab = 'playlist' | 'waka' | 'tech' | 'courses'
-const TAB_KEYS: Tab[] = ['playlist', 'waka', 'tech', 'courses']
+type BannerData = { enabled: boolean; text: string; link?: string; dismissible?: boolean }
+type Tab = 'playlist' | 'waka' | 'tech' | 'courses' | 'banner'
+const TAB_KEYS: Tab[] = ['playlist', 'waka', 'tech', 'courses', 'banner']
 
 function SiteContentInner() {
   const router = useRouter()
@@ -21,6 +22,7 @@ function SiteContentInner() {
   const [waka, setWaka] = useState<WakaData>({ total: '', daily: '', codingSince: '', age: '', langs: [] })
   const [tech, setTech] = useState<TechItem[]>([])
   const [courses, setCourses] = useState<CourseItem[]>([])
+  const [banner, setBanner] = useState<BannerData>({ enabled: false, text: "", link: "", dismissible: true })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null)
@@ -48,6 +50,7 @@ function SiteContentInner() {
         if (data.waka && typeof data.waka === 'object') setWaka(data.waka as WakaData)
         if (Array.isArray(data.tech)) setTech(data.tech as TechItem[])
         if (Array.isArray(data.courses)) setCourses(data.courses as CourseItem[])
+        if (data.banner && typeof data.banner === 'object') setBanner(data.banner as BannerData)
         if (data.error) setErr(data.error)
       })
       .catch((e) => setErr(e instanceof Error ? e.message : 'Load failed'))
@@ -63,6 +66,7 @@ function SiteContentInner() {
           if (d.waka?.total) setWaka(d.waka)
           if (Array.isArray(d.tech) && d.tech.length) setTech(d.tech)
           if (Array.isArray(d.courses) && d.courses.length) setCourses(d.courses)
+          if (d.banner && typeof d.banner === 'object' && (d.banner as BannerData).text !== undefined) setBanner(d.banner as BannerData)
         })
         .catch(() => {})
     }
@@ -108,7 +112,7 @@ function SiteContentInner() {
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6 admin-fade">
         <div>
           <h1 className="text-xl font-bold text-zinc-100">Site content — admin</h1>
-          <p className="text-xs text-zinc-500 mt-1 font-mono">$ site-content --edit — playlist · waka · tech · courses</p>
+          <p className="text-xs text-zinc-500 mt-1 font-mono">$ site-content --edit — playlist · waka · tech · courses · banner</p>
         </div>
         {/* sidebar already has these on desktop — hide here */}
         <div className="flex gap-2 md:hidden">
@@ -130,7 +134,7 @@ function SiteContentInner() {
             onClick={() => switchTab(k)}
             className={`px-4 py-1.5 text-xs font-mono capitalize transition-colors ${tab === k ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}
           >
-            {k === 'playlist' ? 'Playlist' : k === 'waka' ? 'WakaTime' : k === 'tech' ? 'Tech Stack' : 'Courses'}
+            {k === 'playlist' ? 'Playlist' : k === 'waka' ? 'WakaTime' : k === 'tech' ? 'Tech Stack' : k === 'courses' ? 'Courses' : 'Banner'}
           </button>
         ))}
       </div>
@@ -362,6 +366,55 @@ function SiteContentInner() {
             {saving ? 'Saving…' : 'Save courses'}
           </button>
           <p className="text-[11px] text-zinc-600 mt-2 font-mono">Saved to site_settings jsonb key=courses — no migration needed.</p>
+        </div>
+      )}
+
+      {tab === 'banner' && (
+        <div className="border border-zinc-800 bg-zinc-900/50 p-4 space-y-4 admin-fade admin-fade-d2">
+          <h2 className="text-sm font-bold text-zinc-100">Top banner</h2>
+          <p className="text-[11px] text-zinc-500 font-mono">Shown at the very top of the main page above the ASCII header — only when enabled and text is non-empty.</p>
+
+          <label className="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" checked={banner.enabled} onChange={(e) => setBanner((v) => ({ ...v, enabled: e.target.checked }))} className="accent-zinc-100 h-4 w-4" />
+            Enable banner
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] text-zinc-500 font-mono">Text — max 200 chars ({banner.text.length}/200)</span>
+            <input value={banner.text} onChange={(e) => setBanner((v) => ({ ...v, text: e.target.value.slice(0, 200) }))} placeholder="e.g. New album out now →" maxLength={200} className="mt-1 w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono" />
+          </label>
+
+          <label className="block">
+            <span className="text-[11px] text-zinc-500 font-mono">Link — optional URL (leave empty for plain text)</span>
+            <input value={banner.link || ''} onChange={(e) => setBanner((v) => ({ ...v, link: e.target.value }))} placeholder="https://..." className="mt-1 w-full bg-zinc-950 border border-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono" />
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" checked={banner.dismissible !== false} onChange={(e) => setBanner((v) => ({ ...v, dismissible: e.target.checked }))} className="accent-zinc-100 h-4 w-4" />
+            Dismissible — show [×] to hide for session
+          </label>
+
+          <div className="border border-zinc-800 bg-zinc-950 p-3">
+            <span className="text-[11px] text-zinc-500 font-mono">Preview</span>
+            <div className="mt-2 border border-zinc-800 bg-zinc-900 px-3 py-2 flex items-center justify-center gap-2 text-xs font-mono">
+              <span className="text-zinc-500">[ banner ]</span>
+              {banner.link ? (
+                <a href={banner.link} target="_blank" rel="noopener noreferrer" className="text-zinc-200 hover:text-white underline underline-offset-2 decoration-zinc-600 hover:decoration-zinc-300">
+                  {banner.text || '(empty)'}
+                </a>
+              ) : (
+                <span className="text-zinc-200">{banner.text || '(empty)'}</span>
+              )}
+              {banner.dismissible !== false && <span className="ml-auto text-zinc-600 border border-zinc-700 px-1.5 py-0.5 text-[10px]">[×]</span>}
+            </div>
+            {!banner.enabled && <p className="text-[11px] text-amber-400 mt-2 font-mono">Banner is disabled — it will not show on the site until enabled and saved.</p>}
+            {banner.enabled && !banner.text.trim() && <p className="text-[11px] text-amber-400 mt-2 font-mono">Text is empty — banner will not render until text is set.</p>}
+          </div>
+
+          <button onClick={() => save('banner', banner)} disabled={saving} className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white disabled:opacity-50">
+            {saving ? 'Saving…' : 'Save banner'}
+          </button>
+          <p className="text-[11px] text-zinc-600 font-mono">Saved to site_settings jsonb key=banner — no migration needed.</p>
         </div>
       )}
     </div>
