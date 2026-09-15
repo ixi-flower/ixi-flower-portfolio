@@ -276,7 +276,7 @@ export default function AdminBookmarksPage() {
                   <span title="Drag to reorder" className="shrink-0 h-8 w-6 flex items-center justify-center text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400"><GripVertical className="h-3.5 w-3.5" /></span>
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                {b.favicon ? <img src={b.favicon} alt="" width={20} height={20} className="h-5 w-5 object-contain shrink-0 bg-zinc-950 border border-zinc-800 p-0.5" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <Globe className="h-5 w-5 text-zinc-600 shrink-0" />}
+                {b.favicon ? <img src={b.favicon} alt="" width={28} height={28} className="h-7 w-7 object-contain shrink-0 bg-zinc-950 border border-zinc-800 p-1" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} /> : <Globe className="h-7 w-7 text-zinc-600 shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-zinc-100 truncate flex items-center gap-2 flex-wrap">
                     <a href={b.url} target="_blank" rel="noopener noreferrer" className="hover:underline truncate">{b.title}</a>
