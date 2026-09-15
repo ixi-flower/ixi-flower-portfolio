@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock, Settings2, SlidersHorizontal, Download, Upload, FileJson, FileSpreadsheet } from 'lucide-react'
+import { KeyRound, Shield, Search, Plus, Trash2, SquarePen, Eye, EyeOff, Copy, ExternalLink, GripVertical, X, RefreshCw, Lock, Settings2, SlidersHorizontal, Upload, FileJson, FileSpreadsheet } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 type Entry = {
@@ -117,6 +117,8 @@ export default function AdminVaultPage() {
   const [showPw, setShowPw] = useState(false)
   const [genCfg, setGenCfg] = useState<GenCfg>(DEFAULT_GEN_CFG)
   const [genCfgOpen, setGenCfgOpen] = useState(false)
+  const [genPreview, setGenPreview] = useState('')
+  const [genPreviewCopied, setGenPreviewCopied] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge')
   const [importEntries, setImportEntries] = useState<{ title: string; site?: string; username?: string; password: string; notes?: string }[]>([])
@@ -367,17 +369,19 @@ export default function AdminVaultPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {/* minimal import/export — kept tiny in the top-right, not competing with Generator / New entry */}
             <div className="flex items-center gap-1">
-              <button onClick={() => handleExport('json')} disabled={exporting || items.length === 0} className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed" title={items.length === 0 ? 'Vault empty' : 'Export decrypted entries → JSON (owner-only, bulk decrypt)'}>
-                <Download className="h-4 w-4" /> Export
+              <button onClick={() => handleExport('json')} disabled={exporting || items.length === 0} className="h-7 w-7 flex items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed" title={items.length === 0 ? 'Vault empty' : 'Export → JSON (owner-only bulk decrypt)'}>
+                <FileJson className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => handleExport('csv')} disabled={exporting || items.length === 0} className="inline-flex items-center gap-1 px-2 py-2 text-xs font-mono border bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700 disabled:opacity-30" title="Export → CSV (same data)">
+              <button onClick={() => handleExport('csv')} disabled={exporting || items.length === 0} className="h-7 w-7 flex items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800 disabled:opacity-20 disabled:cursor-not-allowed" title="Export → CSV">
                 <FileSpreadsheet className="h-3.5 w-3.5" />
               </button>
+              <button onClick={() => setImportOpen(v => !v)} className={`h-7 w-7 flex items-center justify-center border ${importOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800'}`} title="Import JSON or CSV">
+                <Upload className="h-3.5 w-3.5" />
+              </button>
             </div>
-            <button onClick={() => setImportOpen(v => !v)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border ${importOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700'}`} title="Import JSON or CSV">
-              <Upload className="h-4 w-4" /> Import
-            </button>
+            <div className="h-6 w-px bg-zinc-800 hidden sm:block" aria-hidden />
             <button onClick={() => setGenCfgOpen(v => !v)} className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-mono border ${genCfgOpen ? 'bg-zinc-800 text-zinc-100 border-zinc-600' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-100 hover:border-zinc-700'}`} title="Generator config">
               <SlidersHorizontal className="h-4 w-4" /> Generator
             </button>
@@ -431,11 +435,26 @@ export default function AdminVaultPage() {
                 Require each selected set
               </label>
             </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => { const pw = genPasswordWithCfg(genCfg); setForm(f => ({ ...f, password: pw })); if (!modalOpen) setModalOpen(true); pushToast({ t: 'ok', m: `Generated preview · ${pw.length} chars` }, 1800) }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-900 text-xs hover:bg-white font-mono">
-                <RefreshCw className="h-3 w-3" /> Preview generate
-              </button>
-              <span className="text-[11px] text-zinc-600 font-mono self-center">Saved to localStorage · used for every Generate</span>
+            <div className="space-y-2 pt-1">
+              <div className="flex flex-wrap gap-2 items-center">
+                <button onClick={() => { const pw = genPasswordWithCfg(genCfg); setGenPreview(pw); setGenPreviewCopied(false); setForm(f => ({ ...f, password: pw })); pushToast({ t: 'ok', m: `Generated · ${pw.length} chars` }, 1800) }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 text-zinc-900 text-xs hover:bg-white font-mono">
+                  <RefreshCw className="h-3 w-3" /> Generate
+                </button>
+                <span className="text-[11px] text-zinc-600 font-mono">Saved to localStorage · used for every Generate in the modal</span>
+              </div>
+              {genPreview && (
+                <div className="flex items-center gap-2 border border-zinc-800 bg-zinc-950 px-3 py-2">
+                  <span className="flex-1 text-xs font-mono text-amber-200 break-all select-all">{genPreview}</span>
+                  <button
+                    onClick={async () => { try { await navigator.clipboard.writeText(genPreview); setGenPreviewCopied(true); pushToast({ t: 'ok', m: 'Generated password copied ✓' }, 1600); setTimeout(() => setGenPreviewCopied(false), 1800) } catch { pushToast({ t: 'err', m: 'Copy failed' }) } }}
+                    className={`shrink-0 h-7 px-2.5 inline-flex items-center gap-1.5 text-xs font-mono border ${genPreviewCopied ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100'}`}
+                    title="Copy generated password"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> {genPreviewCopied ? 'Copied ✓' : 'Copy'}
+                  </button>
+                  <button onClick={() => { setForm(f => ({ ...f, password: genPreview })); if (!modalOpen) setModalOpen(true); pushToast({ t: 'ok', m: 'Filled into form ✓' }, 1400) }} className="shrink-0 h-7 px-2.5 inline-flex items-center gap-1 text-xs font-mono border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" title="Fill into New/Edit form">Use</button>
+                </div>
+              )}
             </div>
           </div>
         )}
