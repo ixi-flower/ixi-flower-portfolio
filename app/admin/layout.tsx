@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import AdminGate from "./AdminGate";
 import AdminSidebar from "./AdminSidebar";
 
-export const metadata: Metadata = { title: "Admin — ixi-wave" };
+export const metadata: Metadata = {
+  title: "Admin — ixi-wave",
+  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
