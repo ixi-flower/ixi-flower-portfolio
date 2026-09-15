@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
   category: "technology",
-  verification: { google: "WaFpQHDDo7wXFI-lKwKR-NDkTdn6x5cH5bz1tIVHCAs" },
+  verification: { google: ["WaFpQHDDo7wXFI-lKwKR-NDkTdn6x5cH5bz1tIVHCAs", "eNLKi5bqXZ2OndyTUP29vcOEPIPUceTXcEBuPG8jmH8"] },
 };
 
 const jsonLd = {
