@@ -45,9 +45,35 @@ const WAKA = {
     { name: "Go", pct: 7 },
     { name: "Others", pct: 11 },
   ],
+  editors: [
+    { name: "VS Code", pct: 58 },
+    { name: "Claude Code", pct: 22 },
+    { name: "Neovim", pct: 12 },
+    { name: "Cursor", pct: 8 },
+  ],
+  os: [
+    { name: "Linux", pct: 76 },
+    { name: "Windows", pct: 24 },
+    { name: "macOS", pct: 0 },
+  ],
 };
 
-const PLAYLIST = [
+type Course = { title: string; provider: string; year: string; link?: string; status: "completed" | "in-progress" };
+const COURSES: Course[] = [
+  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed" },
+  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed" },
+  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed" },
+  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed" },
+  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed" },
+  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed" },
+  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed" },
+  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed" },
+  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed" },
+  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed" },
+];
+
+type PlaylistTrack = { title: string; artist: string; dur: string; url?: string };
+const PLAYLIST: PlaylistTrack[] = [
   { title: "AYNEH", artist: "Bahram", dur: "3:16" },
   { title: "Enfejare Rangha", artist: "Bahram", dur: "4:02" },
   { title: "Gole Sorkh", artist: "Bahram", dur: "3:48" },
@@ -202,11 +228,6 @@ function ProjectCard({ p }: { p: Project }) {
             className="object-cover w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
           />
         ) : null}
-        {iframeBlocked && !imgFailed && (
-          <div className="absolute inset-0 flex items-end justify-center pb-2 pointer-events-none">
-            <span className="text-[9px] text-zinc-300 border border-zinc-600 bg-zinc-900/80 px-2 py-0.5">iframe blocked — showing preview image</span>
-          </div>
-        )}
         <div className="absolute top-0 left-0 bg-zinc-900/80 px-2 py-1 text-[10px] text-green-400">{p.status}</div>
         <div className="absolute top-0 right-0 bg-zinc-900/80 p-1 text-zinc-400">
           <IconGithub className="h-3 w-3" />
@@ -271,17 +292,35 @@ function IconMail(props: { className?: string }) {
     </svg>
   );
 }
+function IconYoutube(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={props.className}>
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   github: IconGithub,
   twitter: IconTwitter,
   linkedin: IconLinkedin,
   mail: IconMail,
+  youtube: IconYoutube,
 };
+
+// footer ssh-connect --social — always includes YouTube (PROFILE top card does NOT)
+const FOOTER_SOCIALS_BASE = [
+  { label: "GitHub", href: "https://github.com/ixiflower", icon: "github" },
+  { label: "Twitter", href: "https://x.com/ixi_flower0", icon: "twitter" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/amirabbas-rouintan", icon: "linkedin" },
+  { label: "YouTube", href: "https://www.youtube.com/@ixi_flower0", icon: "youtube" },
+  { label: "Email", href: "mailto:amirabbas.rouintan2007@gmail.com", icon: "mail" },
+] as const;
 
 // ---- blog helpers ----
 function BlogCode({ lines }: { lines: string[] }) {
   const [typed, setTyped] = useState("");
   const [done, setDone] = useState(false);
+  const [copied, setCopied] = useState(false);
   const full = lines.join("\n");
 
   useEffect(() => {
@@ -296,11 +335,73 @@ function BlogCode({ lines }: { lines: string[] }) {
     return () => clearInterval(t);
   }, [full]);
 
+  async function copy() {
+    await navigator.clipboard.writeText(full).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1400);
+  }
+
   return (
-    <pre className="bg-zinc-950 border border-zinc-800 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-[1.65] overflow-x-auto text-zinc-300 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-      <code>{typed}</code>
-      {!done && <span className="inline-block w-1.5 sm:w-2 h-3 sm:h-4 bg-zinc-400 animate-pulse ml-0.5 align-middle" />}
-    </pre>
+    <div className="relative group/code">
+      <button onClick={copy} className={`absolute top-1.5 right-1.5 z-10 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-mono border transition-all ${copied ? 'bg-emerald-950 border-emerald-700 text-emerald-300' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 opacity-0 group-hover/code:opacity-100'}`} title="Copy code">
+        {copied ? '✓ Copied' : 'Copy'}
+      </button>
+      <pre dir="ltr" className="bg-zinc-950 border border-zinc-800 p-2 sm:p-3 text-[10px] sm:text-[11px] leading-[1.65] overflow-x-auto text-left text-zinc-300 whitespace-pre-wrap break-words [overflow-wrap:anywhere]" style={{ direction: "ltr", textAlign: "left", unicodeBidi: "plaintext" }}>
+        <code dir="ltr" style={{ direction: "ltr", unicodeBidi: "plaintext" }}>{typed}</code>
+        {!done && <span className="inline-block w-1.5 sm:w-2 h-3 sm:h-4 bg-zinc-400 animate-pulse ml-0.5 align-middle" />}
+      </pre>
+    </div>
+  );
+}
+
+// — Animated terminal — types lines like a real terminal
+function TermAnim() {
+  const lines: { text: string; cls: string; delay: number }[] = [
+    { text: "> git clone https://github.com/ixiflower", cls: "text-zinc-500", delay: 0 },
+    { text: "remote: Enumerating objects: 1847, done.", cls: "", delay: 700 },
+    { text: "remote: Counting objects: 100% (1847/1847), done.", cls: "", delay: 1100 },
+    { text: "remote: Compressing objects: 100% (812/812), done.", cls: "", delay: 1450 },
+    { text: "Receiving objects: 100% (1847/1847), 9.14 MiB | 4.82 MiB/s, done.", cls: "", delay: 1850 },
+    { text: "Resolving deltas: 100% (923/923), done.", cls: "", delay: 2250 },
+    { text: "> cd ixiflower", cls: "text-zinc-500", delay: 2700 },
+    { text: "> ls -la", cls: "text-zinc-500", delay: 3100 },
+    { text: "total 184", cls: "", delay: 3350 },
+    { text: "drwxr-xr-x  18 user  staff   576 Mar 11 22:00 .", cls: "", delay: 3500 },
+    { text: "drwxr-xr-x   5 user  staff   160 Mar 11 22:00 ..", cls: "", delay: 3650 },
+    { text: "drwxr-xr-x  12 user  staff   384 Mar 11 22:00 .git", cls: "", delay: 3800 },
+    { text: "-rw-r--r--   1 user  staff  2104 Mar 11 22:00 README.md", cls: "", delay: 3950 },
+    { text: "drwxr-xr-x   8 user  staff   256 Mar 11 22:00 projects", cls: "", delay: 4100 },
+    { text: "drwxr-xr-x  10 user  staff   320 Mar 11 22:00 src", cls: "", delay: 4250 },
+    { text: "> cat README.md", cls: "text-zinc-500", delay: 4650 },
+    { text: "# ixiflower", cls: "text-zinc-200", delay: 4950 },
+    { text: "hey welcome — full-stack dev, bot builder, infra hacker.", cls: "", delay: 5150 },
+  ];
+  const [visible, setVisible] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (visible >= lines.length) return;
+    const t = setTimeout(() => setVisible((v) => v + 1), lines[visible]?.delay ? (visible === 0 ? 400 : lines[visible].delay - (lines[visible - 1]?.delay ?? 0)) : 300);
+    return () => clearTimeout(t);
+  }, [visible]);
+  useEffect(() => {
+    scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
+  }, [visible]);
+  // loop after 10s idle
+  useEffect(() => {
+    if (visible !== lines.length) return;
+    const t = setTimeout(() => setVisible(0), 7000);
+    return () => clearTimeout(t);
+  }, [visible]);
+  return (
+    <div ref={scrollerRef} className="p-2 h-[150px] overflow-y-auto custom-scrollbar font-mono text-[10px] leading-tight text-zinc-400 scroll-smooth">
+      {lines.slice(0, visible).map((l, i) => (
+        <div key={i} className={l.cls + (l.text.startsWith(">") ? " flex" : "")}>
+          {l.text}
+          {i === visible - 1 && l.text.startsWith(">") && <span className="ml-1 inline-block h-3 w-1.5 bg-zinc-400 animate-[pulse-blink_1s_steps(1)_infinite] translate-y-px" />}
+        </div>
+      ))}
+      {visible === lines.length && <div className="animate-pulse text-zinc-400">▋</div>}
+    </div>
   );
 }
 
@@ -313,6 +414,35 @@ function BlogModal({ blog, onClose }: { blog: Blog | null; onClose: () => void }
   const isLegacy = blog ? isLegacyBlog(blog) : false;
   const api = !isLegacy && blog ? (blog as ApiPost) : null;
   const legacy = isLegacy && blog ? (blog as LegacyBlog) : null;
+  const postId = api?.id ?? null;
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
+  const [mine, setMine] = useState<"like" | "dislike" | null>(null);
+  const [reacting, setReacting] = useState(false);
+  function getFp() {
+    if (typeof window === "undefined") return "";
+    let v = localStorage.getItem("ixi_fp");
+    if (!v) { v = `fp-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`; localStorage.setItem("ixi_fp", v); }
+    return v;
+  }
+  useEffect(() => {
+    if (!postId) return;
+    setLikes(0); setDislikes(0); setMine(null);
+    fetch(`/api/blog/reactions?postId=${postId}`, { headers: { "x-fingerprint": getFp() } })
+      .then((r) => r.json())
+      .then((j) => { if (typeof j.likes === "number") setLikes(j.likes); if (typeof j.dislikes === "number") setDislikes(j.dislikes); if (j.mine) setMine(j.mine); })
+      .catch(() => {});
+  }, [postId]);
+  async function react(kind: "like" | "dislike") {
+    if (!postId || reacting) return;
+    setReacting(true);
+    try {
+      const r = await fetch("/api/blog/reactions", { method: "POST", headers: { "Content-Type": "application/json", "x-fingerprint": getFp() }, body: JSON.stringify({ postId, kind, fingerprint: getFp() }) });
+      const j = await r.json();
+      if (r.ok) { setLikes(j.likes ?? 0); setDislikes(j.dislikes ?? 0); setMine(j.mine ?? null); }
+    } catch {}
+    setReacting(false);
+  }
 
   // display values (FA falls back to EN)
   const displaySlug = api ? (lang === "fa" && api.slugFa ? api.slugFa : api.slug) : legacy?.slug ?? "";
@@ -353,6 +483,30 @@ function BlogModal({ blog, onClose }: { blog: Blog | null; onClose: () => void }
       window.removeEventListener("keydown", onKey);
     };
   }, [blog, hasFa]);
+
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // inject Copy buttons into Tiptap HTML (<pre> inside .blog-content)
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root || isLegacy) return;
+    const pres = root.querySelectorAll("pre");
+    pres.forEach((pre) => {
+      if (pre.querySelector(".code-copy-btn")) return;
+      const btn = document.createElement("button");
+      btn.textContent = "Copy";
+      btn.className = "code-copy-btn";
+      btn.type = "button";
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+        await navigator.clipboard.writeText(code).catch(() => {});
+        btn.textContent = "✓ Copied";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1400);
+      });
+      pre.appendChild(btn);
+    });
+  }, [displayContentHtml, isLegacy]);
 
   if (!blog) return null;
 
@@ -435,6 +589,7 @@ function BlogModal({ blog, onClose }: { blog: Blog | null; onClose: () => void }
             </div>
           ) : (
             <div
+              ref={contentRef}
               dir={faActive ? "rtl" : "ltr"}
               className={`blog-content ${faActive ? "font-[var(--font-vazirmatn)] text-right leading-[1.95] text-[13px] sm:text-[15px]" : "text-[13px] sm:text-sm"}`}
               dangerouslySetInnerHTML={{ __html: displayContentHtml || `<p class="text-zinc-500">No content.</p>` }}
@@ -447,9 +602,117 @@ function BlogModal({ blog, onClose }: { blog: Blog | null; onClose: () => void }
           )}
         </div>
 
-        <div className="px-3 sm:px-4 py-2.5 sm:py-2 border-t border-zinc-800 flex items-center justify-between gap-3 shrink-0 bg-zinc-900">
-          <span className="text-[9px] sm:text-[10px] text-zinc-500 truncate min-w-0">{displayDate} · {displayTag} · {displayReadTime}</span>
+        <div className="px-3 sm:px-4 py-2.5 sm:py-2 border-t border-zinc-800 flex items-center justify-between gap-2 shrink-0 bg-zinc-900">
+          <span className="text-[9px] sm:text-[10px] text-zinc-500 truncate min-w-0 hidden sm:inline">{displayDate} · {displayTag} · {displayReadTime}</span>
+          {postId ? (
+            <span className="flex items-center gap-1.5 shrink-0">
+              <button disabled={reacting} onClick={() => react("like")} className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs border transition-colors ${mine === "like" ? "bg-emerald-500 text-zinc-950 border-emerald-500" : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`} title="Like">
+                <svg width={12} height={12} viewBox="0 0 24 24" fill={mine === "like" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={mine === "like" ? 0 : 1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-2l-1.33-6.66A2 2 0 0 0 16.96 11H14z" /><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" /></svg> {likes}
+              </button>
+              <button disabled={reacting} onClick={() => react("dislike")} className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs border transition-colors ${mine === "dislike" ? "bg-red-500 text-white border-red-500" : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"}`} title="Dislike">
+                <svg width={12} height={12} viewBox="0 0 24 24" fill={mine === "dislike" ? "currentColor" : "none"} stroke="currentColor" strokeWidth={mine === "dislike" ? 0 : 1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 2l1.33 6.66A2 2 0 0 0 7.04 13H10z" /><path d="M17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" /></svg> {dislikes}
+              </button>
+            </span>
+          ) : <span className="text-[10px] text-zinc-600 hidden sm:inline" />}
           <button onClick={close} className="text-xs px-4 sm:px-3 py-1.5 sm:py-1 bg-zinc-100 text-zinc-900 hover:bg-white active:bg-zinc-200 transition-colors shrink-0">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlogsAllModal({ blogs, onClose, onSelect }: { blogs: Blog[]; onClose: () => void; onSelect: (b: Blog) => void }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  const fmtDate = (b: Blog) => {
+    if (isLegacyBlog(b)) return b.date;
+    const s = (b as ApiPost).publishedAt || (b as ApiPost).createdAt;
+    return new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+  const readTime = (b: Blog) => {
+    if (isLegacyBlog(b)) return b.readTime;
+    const html = (b as ApiPost).content || "";
+    return `${Math.max(1, Math.ceil(html.length / 900))} min`;
+  };
+  const tag = (b: Blog) => (isLegacyBlog(b) ? b.tag : ((b as ApiPost).tags?.[0]?.name ?? "Blog"));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+      <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="relative w-full max-w-3xl max-h-[85vh] bg-zinc-900 border border-zinc-700 shadow-2xl flex flex-col overflow-hidden rounded-none">
+        {/* title bar */}
+        <div className="flex items-center justify-between gap-2 px-2.5 sm:px-3 py-2 bg-zinc-800 border-b border-zinc-700 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+            <span className="flex gap-1 shrink-0">
+              <span className="h-2 sm:h-2.5 w-2 sm:w-2.5 rounded-full bg-red-500" />
+              <span className="h-2 sm:h-2.5 w-2 sm:w-2.5 rounded-full bg-yellow-500" />
+              <span className="h-2 sm:h-2.5 w-2 sm:w-2.5 rounded-full bg-green-500" />
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-mono truncate">ls ~/blogs --all</span>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="h-7 w-7 sm:h-6 sm:w-6 flex items-center justify-center text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition-colors shrink-0 -mr-1 sm:mr-0">
+            ✕
+          </button>
+        </div>
+        {/* terminal line */}
+        <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2 border-b border-zinc-800 bg-zinc-950 font-mono text-[10px] sm:text-[11px] leading-5 shrink-0 overflow-hidden">
+          <div className="text-zinc-500 truncate">$ ls -la ~/blogs --all</div>
+          <div className="flex items-center gap-1 text-zinc-400">
+            <span className="h-1.5 w-1.5 bg-green-400 rounded-full shrink-0 animate-pulse" /> {blogs.length} posts — click to open
+          </div>
+        </div>
+        {/* scrollable grid */}
+        <div className="overflow-y-auto p-3 sm:p-4 custom-scrollbar overscroll-contain">
+          {blogs.length === 0 ? (
+            <p className="text-sm text-zinc-500 font-mono">no posts yet</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              {blogs.map((b) => (
+                <button
+                  key={b.slug}
+                  onClick={() => onSelect(b)}
+                  className="text-left border border-zinc-800 bg-zinc-800/50 p-3 hover:border-zinc-600 hover:bg-zinc-800 transition-colors relative group"
+                >
+                  <span className="absolute top-0 left-0 text-zinc-700 text-[8px] leading-none">
+                    <pre>+--</pre>
+                  </span>
+                  <span className="absolute bottom-0 right-0 text-zinc-700 text-[8px] leading-none">
+                    <pre>--+</pre>
+                  </span>
+                  <h3 className="text-sm font-medium text-zinc-200 group-hover:text-white pr-4 line-clamp-2">
+                    {b.title}
+                    <span className="ml-2 text-[10px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">$ cat →</span>
+                  </h3>
+                  <div className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500">
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <rect width={18} height={18} x={3} y={4} rx={2} />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>{" "}
+                    {fmtDate(b)} · {readTime(b)}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1.5 line-clamp-2">{b.excerpt}</p>
+                  <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{tag(b)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="px-3 sm:px-4 py-2.5 sm:py-2 border-t border-zinc-800 flex items-center justify-between gap-3 shrink-0 bg-zinc-900">
+          <span className="text-[10px] text-zinc-500 font-mono">{blogs.length} posts</span>
+          <button onClick={onClose} className="text-xs px-4 sm:px-3 py-1.5 sm:py-1 bg-zinc-100 text-zinc-900 hover:bg-white active:bg-zinc-200 transition-colors">
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -473,25 +736,39 @@ function Prompt({ cmd }: { cmd: string }) {
     </div>
   );
 }
-function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+function Card({ className, children, delay }: { className?: string; children: React.ReactNode; delay?: number }) {
   return (
-    <div className={`relative bg-zinc-900/50 border border-zinc-800 overflow-hidden rounded-none hover:border-zinc-700 transition-all duration-300 shadow-md ${className || ""}`}>
+    <div
+      style={delay != null ? { animationDelay: `${delay}ms` } : undefined}
+      className={`fade-up relative bg-zinc-900/50 border border-zinc-800 overflow-hidden rounded-none hover:border-zinc-700 transition-all duration-300 shadow-md ${className || ""}`}
+    >
       <div className="p-3">{children}</div>
     </div>
   );
 }
 
+function fmtTime(s: number) {
+  if (!isFinite(s) || s <= 0) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
 export default function Home() {
   const [cur, setCur] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [langTab, setLangTab] = useState<"languages" | "editors" | "os">("languages");
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
-  const [blogsExpanded, setBlogsExpanded] = useState(false);
+  const [showAllBlogs, setShowAllBlogs] = useState(false);
   const [apiPosts, setApiPosts] = useState<ApiPost[] | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [sitePlaylist, setSitePlaylist] = useState<typeof PLAYLIST | null>(null);
   const [siteWaka, setSiteWaka] = useState<typeof WAKA | null>(null);
   const [siteTech, setSiteTech] = useState<typeof TECH | null>(null);
+  const [siteCourses, setSiteCourses] = useState<typeof COURSES | null>(null);
+  const [siteProfile, setSiteProfile] = useState<typeof PROFILE | null>(null);
 
   useEffect(() => {
     fetch("/api/blog", { cache: "no-store" })
@@ -507,9 +784,18 @@ export default function Home() {
         if (Array.isArray(d.playlist) && d.playlist.length) setSitePlaylist(d.playlist as typeof PLAYLIST);
         if (d.waka && typeof d.waka === "object" && d.waka.total) setSiteWaka(d.waka as typeof WAKA);
         if (Array.isArray(d.tech) && d.tech.length) setSiteTech(d.tech as typeof TECH);
+        if (Array.isArray(d.courses) && d.courses.length) setSiteCourses(d.courses as typeof COURSES);
+        if (d.profile && typeof d.profile === "object" && (d.profile as Record<string, unknown>).handle) setSiteProfile(d.profile as typeof PROFILE);
       })
       .catch(() => {});
   }, []);
+
+  // keep audio in sync with play/cur state (auto-play next track)
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing && el.src) el.play().catch(() => {});
+  }, [cur, playing]);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-200 p-3 font-mono">
@@ -531,30 +817,34 @@ export default function Home() {
           <div className="text-[10px] text-zinc-600 tracking-[0.3em] mt-1">ixi_flower — amirabbas rouintan</div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 auto-rows-min">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 auto-rows-min md:items-stretch">
           {/* PROFILE */}
-          <Card className="md:col-span-3">
+          <Card className="md:col-span-3" delay={0}>
             <div className="flex flex-col gap-y-2 h-full p-0">
               <div className="flex items-center gap-3">
                 <div className="w-16 h-16 overflow-hidden rounded-none shrink-0 bg-zinc-800 border border-zinc-700">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt="Profile" src={PROFILE.avatar} className="object-cover w-full h-full" />
+                  <img alt="Profile" src={(siteProfile ?? PROFILE).avatar || "/avatar.jpg"} className="object-cover w-full h-full" />
                 </div>
                 <div className="text-left">
                   <h1 className="text-xl font-bold text-zinc-100 tracking-tight">
-                    {PROFILE.handle}
+                    {(siteProfile ?? PROFILE).handle}
                     <span className="animate-pulse">_</span>
                   </h1>
-                  <p className="text-zinc-400 text-sm">{PROFILE.title}</p>
+                  <p className="text-zinc-400 text-sm">{(siteProfile ?? PROFILE).title}</p>
                 </div>
               </div>
               <div className="mt-2 text-sm text-zinc-300 text-left border-l-2 border-zinc-700 pl-2 leading-relaxed">
-                <p>{PROFILE.bio}</p>
+                <p>{(siteProfile ?? PROFILE).bio}</p>
               </div>
               <div className="flex-grow flex items-end w-full">
                 <div className="mt-3 grid grid-cols-4 gap-2 w-full">
-                  {PROFILE.socials.map((s) => {
-                    const Ico = iconMap[s.icon];
+                  {(() => {
+                    const src = siteProfile ? (siteProfile.socials as unknown as typeof PROFILE.socials) : PROFILE.socials;
+                    const filtered = (src as unknown as { icon: string }[]).filter(s => s.icon !== 'youtube') as unknown as typeof PROFILE.socials;
+                    return filtered;
+                  })().map((s) => {
+                    const Ico = iconMap[s.icon as string] ?? IconGithub;
                     return (
                       <a key={s.label} target="_blank" href={s.href} className="relative overflow-hidden group">
                         <div className="border border-zinc-700 bg-zinc-800/50 group-hover:bg-zinc-800 group-hover:border-zinc-600 transition-all duration-300 p-2 flex flex-col items-center justify-center rounded-none h-[64px]">
@@ -579,7 +869,7 @@ export default function Home() {
           </Card>
 
           {/* GIT STATS */}
-          <Card className="md:col-span-3">
+          <Card className="md:col-span-3" delay={60}>
             <Prompt cmd="git stats --user ixiflower" />
             <div className="space-y-2">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -644,27 +934,7 @@ export default function Home() {
                     <span className="h-2 w-2 rounded-full bg-green-500" />
                   </span>
                 </div>
-                <div className="p-2 h-[150px] overflow-y-auto custom-scrollbar font-mono text-[10px] leading-tight text-zinc-400">
-                  <div className="text-zinc-500">&gt; git clone https://github.com/ixiflower</div>
-                  <div>remote: Enumerating objects: 1847, done.</div>
-                  <div>remote: Counting objects: 100% (1847/1847), done.</div>
-                  <div>remote: Compressing objects: 100% (812/812), done.</div>
-                  <div>Receiving objects: 100% (1847/1847), 9.14 MiB | 4.82 MiB/s, done.</div>
-                  <div>Resolving deltas: 100% (923/923), done.</div>
-                  <div className="text-zinc-500">&gt; cd ixiflower</div>
-                  <div className="text-zinc-500">&gt; ls -la</div>
-                  <div>total 184</div>
-                  <div>drwxr-xr-x  18 user  staff   576 Mar 11 22:00 .</div>
-                  <div>drwxr-xr-x   5 user  staff   160 Mar 11 22:00 ..</div>
-                  <div>drwxr-xr-x  12 user  staff   384 Mar 11 22:00 .git</div>
-                  <div>-rw-r--r--   1 user  staff  2104 Mar 11 22:00 README.md</div>
-                  <div>drwxr-xr-x   8 user  staff   256 Mar 11 22:00 projects</div>
-                  <div>drwxr-xr-x  10 user  staff   320 Mar 11 22:00 src</div>
-                  <div className="text-zinc-500">&gt; cat README.md</div>
-                  <div className="text-zinc-200"># ixiflower</div>
-                  <div>hey welcome — full-stack dev, bot builder, infra hacker.</div>
-                  <div className="animate-pulse">▋</div>
-                </div>
+                <TermAnim />
               </div>
 
               <a target="_blank" href="https://github.com/ixiflower" className="block">
@@ -676,9 +946,10 @@ export default function Home() {
           </Card>
 
           {/* TECH */}
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 flex flex-col md:h-[360px] [&>div]:flex-1 [&>div]:flex [&>div]:flex-col [&>div]:min-h-0" delay={120}>
             <Prompt cmd="ls -la tech/" />
-            <div className="grid grid-cols-1 gap-1.5 max-h-[290px] overflow-y-auto custom-scrollbar pr-1">
+            <div className="relative flex-1 flex flex-col min-h-0">
+              <div className="grid grid-cols-1 gap-1.5 flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 content-start pb-6">
               {(siteTech ?? TECH).map((t: (typeof TECH)[number]) => (
                 <div key={t.name} className="flex justify-between items-center p-2 bg-zinc-800/50 border border-zinc-700 rounded-none hover:bg-zinc-800 transition-colors group gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -700,6 +971,8 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
             </div>
           </Card>
 
@@ -707,10 +980,18 @@ export default function Home() {
           {(() => {
             const wakaData = siteWaka ?? WAKA;
             const barColors = ["bg-sky-500", "bg-yellow-500", "bg-violet-500", "bg-emerald-500", "bg-orange-500"];
+            const osColors = ["bg-orange-500", "bg-sky-600", "bg-zinc-500"];
+            const editorColors = ["bg-sky-500", "bg-violet-500", "bg-emerald-500", "bg-yellow-500"];
+            const activeList =
+              langTab === "languages" ? wakaData.langs
+              : langTab === "editors" ? (wakaData.editors ?? WAKA.editors)
+              : (wakaData.os ?? WAKA.os);
+            const activeColors = langTab === "os" ? osColors : langTab === "editors" ? editorColors : barColors;
+            const title = langTab === "languages" ? "Top Languages" : langTab === "editors" ? "Editors" : "Operating Systems";
             return (
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 flex flex-col md:h-[360px] [&>div]:flex-1 [&>div]:flex [&>div]:flex-col [&>div]:min-h-0" delay={180}>
             <Prompt cmd="wakatime --all" />
-            <div className="space-y-3">
+            <div className="space-y-3 flex-1 flex flex-col min-h-0">
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-zinc-800/50 border border-zinc-700 p-2 min-w-0 overflow-hidden">
                   <div className="text-[10px] text-zinc-400 leading-tight">Coding since {wakaData.codingSince} — age 12</div>
@@ -734,14 +1015,14 @@ export default function Home() {
                 ))}
               </div>
               <div>
-                <div className="text-xs text-zinc-400 mb-1">Top Languages</div>
+                <div className="text-xs text-zinc-400 mb-1">{title}</div>
                 <div className="h-2 w-full bg-zinc-800 flex overflow-hidden rounded-none">
-                  {wakaData.langs.map((l, i) => (
-                    <div key={l.name} className={barColors[i % barColors.length]} style={{ width: `${l.pct}%` }} />
+                  {activeList.map((l, i) => (
+                    <div key={l.name} className={activeColors[i % activeColors.length]} style={{ width: `${l.pct}%` }} />
                   ))}
                 </div>
                 <div className="mt-2 space-y-1">
-                  {wakaData.langs.map((l) => (
+                  {activeList.map((l) => (
                     <div key={l.name} className="flex justify-between text-xs">
                       <span className="text-zinc-300">{l.name}</span>
                       <span className="text-zinc-500">{l.pct}%</span>
@@ -754,56 +1035,98 @@ export default function Home() {
             );
           })()}
 
-          {/* MUSIC */}
+          {/* MUSIC — real <audio> wired to Cloudinary urls, progress + seek + auto-next */}
           {(() => {
             const pl = sitePlaylist ?? PLAYLIST;
             const curTrack = pl[cur] ?? pl[0];
+            const hasUrl = !!curTrack.url;
+            const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+            // effect wiring inside IIFE scope via refs — attach inline handlers below
             return (
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 flex flex-col md:h-[360px] [&>div]:flex-1 [&>div]:flex [&>div]:flex-col [&>div]:min-h-0" delay={240}>
             <Prompt cmd="mpv --playlist favorites.m3u" />
-            <div className="space-y-2">
-              <div className="bg-zinc-900 border border-zinc-800 p-2 flex items-center gap-2">
-                <div className="h-10 w-10 bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400">♪</div>
+            <audio
+              ref={audioRef}
+              src={curTrack.url || undefined}
+              preload="metadata"
+              onTimeUpdate={(e) => setCurrentTime((e.target as HTMLAudioElement).currentTime)}
+              onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration)}
+              onEnded={() => {
+                setCur((c) => (c + 1) % pl.length);
+                setPlaying(true);
+              }}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+            />
+            <div className="space-y-2 flex-1 flex flex-col min-h-0">
+              <div className="bg-zinc-900 border border-zinc-800 p-1.5 flex items-center gap-1.5 shrink-0">
+                <div className="h-8 w-8 bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400 text-xs shrink-0">♪</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold text-zinc-100 truncate">{curTrack.title}</div>
-                  <div className="text-xs text-zinc-400 truncate">{curTrack.artist} — 0:00 / {curTrack.dur}</div>
-                  <div className="h-1 bg-zinc-800 mt-1">
-                    <div className="h-1 bg-zinc-300" style={{ width: playing ? "38%" : "0%" }} />
+                  <div className="text-xs font-semibold text-zinc-100 truncate">{curTrack.title}</div>
+                  <div className="text-[11px] text-zinc-400 truncate">
+                    {curTrack.artist} — {hasUrl ? `${fmtTime(currentTime)} / ${duration ? fmtTime(duration) : curTrack.dur}` : curTrack.dur}
+                    {!hasUrl && <span className="text-amber-400 ml-1">(no audio)</span>}
+                  </div>
+                  <div
+                    className="h-0.5 bg-zinc-800 mt-1 cursor-pointer"
+                    onClick={(e) => {
+                      if (!hasUrl || !duration || !audioRef.current) return;
+                      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                      const frac = (e.clientX - rect.left) / rect.width;
+                      audioRef.current.currentTime = frac * duration;
+                    }}
+                  >
+                    <div className="h-0.5 bg-zinc-300 transition-[width] duration-100" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => setCur((c) => (c - 1 + pl.length) % pl.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
-                    ◀
+                <div className="flex gap-0.5">
+                  <button
+                    onClick={() => setCur((c) => (c - 1 + pl.length) % pl.length)}
+                    className="h-6 w-6 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px] leading-none"
+                  >
+                    <span className="leading-none translate-y-[0.5px] inline-block">◀</span>
                   </button>
                   <button
-                    onClick={() => setPlaying((p) => !p)}
-                    className="h-7 w-7 border border-zinc-700 bg-zinc-100 text-zinc-900 flex items-center justify-center"
+                    onClick={() => {
+                      if (!hasUrl) return;
+                      if (playing) audioRef.current?.pause();
+                      else audioRef.current?.play().catch(() => {});
+                    }}
+                    disabled={!hasUrl}
+                    className={`h-6 w-6 border flex items-center justify-center text-[10px] leading-none ${hasUrl ? "border-zinc-700 bg-zinc-100 text-zinc-900 hover:bg-white" : "border-zinc-800 bg-zinc-800 text-zinc-600 cursor-not-allowed"}`}
                   >
-                    {playing ? "❚❚" : "▶"}
+                    <span className="leading-none translate-y-[0.5px] inline-block">{playing ? "❚❚" : "▶"}</span>
                   </button>
-                  <button onClick={() => setCur((c) => (c + 1) % pl.length)} className="h-7 w-7 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center">
-                    ▶
+                  <button
+                    onClick={() => setCur((c) => (c + 1) % pl.length)}
+                    className="h-6 w-6 border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center text-[10px] leading-none"
+                  >
+                    <span className="leading-none translate-y-[0.5px] inline-block">▶</span>
                   </button>
                 </div>
               </div>
               <div className="flex justify-between text-[10px] text-zinc-500">
                 <span>Playlist</span>
-                <span>{pl.length} tracks</span>
+                <span>{pl.length} tracks{hasUrl ? "" : " · upload audio in /admin/site-content"}</span>
               </div>
-              <div className="relative">
-                <div className="max-h-[220px] overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
+              <div className="relative flex-1 flex flex-col min-h-0">
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
                   {pl.map((t, i) => (
                   <button
-                    key={t.title}
+                    key={`${t.title}-${i}`}
                     onClick={() => {
                       setCur(i);
-                      setPlaying(true);
+                      // play will trigger via effect when src changes; nudge play after tick if url exists
+                      if (t.url) setTimeout(() => audioRef.current?.play().catch(() => {}), 80);
+                      else setPlaying(false);
                     }}
                     className={`w-full flex items-center justify-between p-1.5 border text-left rounded-none transition-colors ${i === cur ? "bg-zinc-800 border-zinc-600 text-zinc-100" : "bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"}`}
                   >
                     <span className="flex items-center gap-2 min-w-0">
                       <span className="h-6 w-6 bg-zinc-900 border border-zinc-700 flex items-center justify-center text-[10px] shrink-0">♪</span>
                       <span className="text-xs truncate">{t.title}</span>
+                      {t.url ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" title="audio ready" /> : null}
                     </span>
                     <span className="text-[10px] shrink-0 ml-2">{t.dur}</span>
                   </button>
@@ -817,7 +1140,7 @@ export default function Home() {
           })()}
 
           {/* REPOS */}
-          <Card className="md:col-span-6">
+          <Card className="md:col-span-6" delay={300}>
             <div className="flex justify-between items-center mb-3">
               <Prompt cmd="gh repo list --sort stars" />
               <a target="_blank" href="https://github.com/ixiflower" className="shrink-0 ml-2">
@@ -847,7 +1170,6 @@ export default function Home() {
           {/* BLOGS — live from DB (/api/blog), falls back to hardcoded BLOGS */}
           {(() => {
             const source: Blog[] = apiPosts ?? (BLOGS as unknown as Blog[]);
-            const visible = blogsExpanded ? source : source.slice(0, 1);
             const fmtDate = (b: Blog) => {
               if (isLegacyBlog(b)) return b.date;
               const s = (b as ApiPost).publishedAt || (b as ApiPost).createdAt;
@@ -860,45 +1182,48 @@ export default function Home() {
             };
             const tag = (b: Blog) => isLegacyBlog(b) ? b.tag : ((b as ApiPost).tags?.[0]?.name ?? "Blog");
             return (
-              <Card className="md:col-span-3">
+              <Card className="md:col-span-3" delay={360}>
                 <Prompt cmd={`find ./blogs -type f -name '*.md' | sort -r`} />
-                <div className="space-y-2">
-                  {visible.map((b) => (
-                    <button
-                      key={b.slug}
-                      onClick={() => setSelectedBlog(b)}
-                      className="block w-full text-left border border-zinc-800 bg-zinc-800/50 p-2 hover:border-zinc-600 hover:bg-zinc-800 transition-colors relative group"
-                    >
-                      <span className="absolute top-0 left-0 text-zinc-700 text-[8px] leading-none"><pre>+--</pre></span>
-                      <span className="absolute bottom-0 right-0 text-zinc-700 text-[8px] leading-none"><pre>--+</pre></span>
-                      <h3 className="text-sm font-medium text-zinc-200 group-hover:text-white pr-6">
-                        {b.title}
-                        <span className="ml-2 text-[10px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">$ cat →</span>
-                      </h3>
-                      <div className="flex items-center gap-1 mt-1 text-[10px] text-zinc-500">
-                        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <rect width={18} height={18} x={3} y={4} rx={2} /><path d="M16 2v4M8 2v4M3 10h18" />
-                        </svg>{" "}{fmtDate(b)} · {readTime(b)}
-                      </div>
-                      <p className="text-xs text-zinc-400 mt-1 line-clamp-1">{b.excerpt}</p>
-                      <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{tag(b)}</span>
-                    </button>
-                  ))}
-                  <div className="text-center">
-                    <button onClick={() => setBlogsExpanded((v) => !v)} className="text-xs text-zinc-300 hover:text-zinc-100 inline-flex items-center gap-1">
-                      {blogsExpanded ? "Show less" : `View all posts (${source.length})`} <span>{blogsExpanded ? "↑" : "→"}</span>
-                    </button>
+                <div className="relative">
+                  <div className="space-y-2 max-h-[320px] overflow-y-auto custom-scrollbar pr-1 pb-6">
+                    {source.map((b) => (
+                      <button
+                        key={b.slug}
+                        onClick={() => setSelectedBlog(b)}
+                        className="block w-full text-left border border-zinc-800 bg-zinc-800/50 p-2 hover:border-zinc-600 hover:bg-zinc-800 transition-colors relative group"
+                      >
+                        <span className="absolute top-0 left-0 text-zinc-700 text-[8px] leading-none"><pre>+--</pre></span>
+                        <span className="absolute bottom-0 right-0 text-zinc-700 text-[8px] leading-none"><pre>--+</pre></span>
+                        <h3 className="text-sm font-medium text-zinc-200 group-hover:text-white pr-6">
+                          {b.title}
+                          <span className="ml-2 text-[10px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">$ cat →</span>
+                        </h3>
+                        <div className="flex items-center gap-1 mt-1 text-[10px] text-zinc-500">
+                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <rect width={18} height={18} x={3} y={4} rx={2} /><path d="M16 2v4M8 2v4M3 10h18" />
+                          </svg>{" "}{fmtDate(b)} · {readTime(b)}
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1 line-clamp-1">{b.excerpt}</p>
+                        <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{tag(b)}</span>
+                      </button>
+                    ))}
                   </div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
+                </div>
+                <div className="text-center mt-2">
+                  <a href="/blogs" className="text-xs text-zinc-300 hover:text-zinc-100 inline-flex items-center gap-1">
+                    View all posts ({source.length}) <span>→</span>
+                  </a>
                 </div>
               </Card>
             );
           })()}
 
           {/* PROJECTS */}
-          <Card className="md:col-span-3">
+          <Card className="md:col-span-3" delay={420}>
             <div className="flex justify-between items-center mb-3">
               <Prompt cmd={`find ./projects -type f -name '*.featured'`} />
-              <a href="#" className="shrink-0 ml-2 inline-flex items-center gap-1 h-7 px-3 text-xs border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 rounded-none">
+              <a href="/projects" className="shrink-0 ml-2 inline-flex items-center gap-1 h-7 px-3 text-xs border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 rounded-none">
                 All Projects <span>↗</span>
               </a>
             </div>
@@ -909,15 +1234,90 @@ export default function Home() {
             </div>
           </Card>
 
+          {/* COURSES */}
+          <Card className="md:col-span-6" delay={440}>
+            <Prompt cmd="cat ./courses.json | jq" />
+            <div className="relative">
+              <div className="max-h-[320px] overflow-y-auto custom-scrollbar space-y-1 pr-1 pb-6">
+                {(siteCourses ?? COURSES).map((c, i) => (
+                  <div key={`${c.title}-${i}`} className="flex items-center justify-between gap-2 p-2 bg-zinc-800/50 border border-zinc-800 hover:border-zinc-600 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      {c.link ? (
+                        <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-zinc-200 hover:text-white hover:underline truncate block">
+                          {c.title}
+                        </a>
+                      ) : (
+                        <span className="text-xs font-medium text-zinc-200 truncate block">{c.title}</span>
+                      )}
+                      <span className="text-[11px] text-zinc-500 truncate block">
+                        {c.provider} · {c.year}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {c.link ? (
+                        <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-zinc-500 hover:text-zinc-300 border border-zinc-700 px-1.5 py-0.5">
+                          link ↗
+                        </a>
+                      ) : null}
+                      <span className={`text-[10px] px-1.5 py-0.5 border rounded-none whitespace-nowrap ${c.status === "completed" ? "bg-emerald-950/40 border-emerald-800 text-emerald-300" : "bg-amber-950/40 border-amber-800 text-amber-300"}`}>
+                        {c.status === "completed" ? "completed" : "in-progress"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(siteCourses ?? COURSES).length === 0 && <p className="text-zinc-600 text-xs text-center py-6">No courses yet.</p>}
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
+            </div>
+          </Card>
+
+          {/* YOUTUBE — terminal themed */}
+          <Card className="md:col-span-6" delay={460}>
+            <Prompt cmd="mpv --playlist youtube.m3u --channel ixi_flower" />
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-1">
+              <div className="lg:col-span-3">
+                <div className="flex items-center justify-between px-2 py-1 bg-zinc-800 border border-zinc-700 border-b-0 text-[10px] font-mono">
+                  <span className="flex items-center gap-1.5 text-zinc-400"><svg width={12} height={12} viewBox="0 0 24 24" fill="#ef4444" className="shrink-0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg> youtube — ixi_flower</span>
+                  <span className="flex gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="h-2 w-2 rounded-full bg-yellow-500" /><span className="h-2 w-2 rounded-full bg-green-500" /></span>
+                </div>
+                <div className="border border-zinc-800 bg-black overflow-hidden">
+                  <div className="relative aspect-video">
+                    <iframe
+                      src="https://www.youtube.com/embed/NQJa6Las1Jw"
+                      title="YouTube — ixi_flower"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="lg:col-span-2 flex flex-col justify-between gap-3 py-1">
+                <div>
+                  <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1.5"><svg width={11} height={11} viewBox="0 0 24 24" fill="#ef4444" className="shrink-0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg> now playing</div>
+                  <div className="text-sm font-bold text-zinc-100 mt-1.5 leading-tight text-right" dir="rtl">پیدا کردن هر فایلی زیر ۱ ثانیه! 😳⚡</div>
+                  <div className="text-[11px] text-zinc-500 mt-1 font-mono flex items-center gap-1"><svg width={11} height={11} viewBox="0 0 24 24" fill="#ef4444" className="shrink-0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg> ixi_flower · YouTube · tools</div>
+                  <p className="text-xs text-zinc-400 mt-3 leading-relaxed">Tutorials, tools, and things I learn — captured on video. New uploads weekly — quick tips, deep dives, and behind-the-scenes.</p>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <a href="https://youtube.com/@ixi_flower0" target="_blank" rel="noopener noreferrer" className="yt-shine inline-flex items-center gap-2 px-4 py-2 bg-red-600 border border-red-500 text-white hover:bg-red-500 text-xs font-mono transition-all shadow-[0_0_14px_rgba(239,68,68,0.45)] hover:shadow-[0_0_22px_rgba(239,68,68,0.7)] hover:border-red-400">
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+                    Visit channel ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           {/* FOOTER CONNECT */}
-          <Card className="md:col-span-6">
+          <Card className="md:col-span-6" delay={500}>
             <div className="text-center">
               <pre className="inline-block text-xs text-zinc-500 leading-tight">+-----------------------+{"\n"}|     CONNECT WITH ME    |{"\n"}+-----------------------+</pre>
             </div>
             <Prompt cmd="ssh-connect --social" />
             <div className="flex justify-center gap-3">
-              {PROFILE.socials.map((s) => {
-                const Ico = iconMap[s.icon];
+              {FOOTER_SOCIALS_BASE.map((s) => {
+                const Ico = iconMap[s.icon as string] ?? IconGithub;
                 return (
                   <a
                     key={s.label}
@@ -934,8 +1334,15 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="text-center text-[10px] text-zinc-600 mt-6 font-mono">© 2026 ixi_flower — built with Next.js • terminal edition • hoseinwave inspired</div>
+        <div className="text-center text-[10px] text-zinc-600 mt-6 font-mono">© 2026 ixiflower — crafted with Next.js · terminal soul · code & coffee</div>
       </div>
+      {showAllBlogs && (
+        <BlogsAllModal
+          blogs={(apiPosts ?? (BLOGS as unknown as Blog[]))}
+          onClose={() => setShowAllBlogs(false)}
+          onSelect={(b) => setSelectedBlog(b)}
+        />
+      )}
       {selectedBlog && <BlogModal blog={selectedBlog} onClose={() => setSelectedBlog(null)} />}
     </main>
   );

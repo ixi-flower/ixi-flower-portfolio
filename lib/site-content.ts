@@ -14,6 +14,7 @@ export const playlistSchema = z
       title: z.string().min(1).max(120),
       artist: z.string().max(120).default(""),
       dur: z.string().regex(/^\d+:\d{2}$/, "dur must be m:ss like 3:16"),
+      url: z.string().url().max(2000).optional().or(z.literal("")),
     }),
   )
   .max(100);
@@ -31,6 +32,24 @@ export const wakaSchema = z.object({
       }),
     )
     .max(10),
+  editors: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(40),
+        pct: z.number().min(0).max(100),
+      }),
+    )
+    .max(10)
+    .optional(),
+  os: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(40),
+        pct: z.number().min(0).max(100),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 export const techSchema = z
@@ -46,13 +65,46 @@ export const techSchema = z
   )
   .max(50);
 
-export const VALID_KEYS = ["playlist", "waka", "tech"] as const;
+export const coursesSchema = z
+  .array(
+    z.object({
+      title: z.string().min(1).max(120),
+      provider: z.string().max(80),
+      year: z.string().max(20),
+      link: z.string().url().max(500).optional().or(z.literal("")),
+      status: z.enum(["completed", "in-progress"]).default("completed"),
+    }),
+  )
+  .max(50);
+
+export const profileSchema = z.object({
+  handle: z.string().min(1).max(40),
+  title: z.string().max(80),
+  name: z.string().max(80),
+  bio: z.string().max(500),
+  avatar: z.string().url().max(500).or(z.literal("")).optional(),
+  avatarPublicId: z.string().max(200).optional(),
+  socials: z
+    .array(
+      z.object({
+        label: z.string().max(40),
+        href: z.string().url().max(500),
+        icon: z.enum(["github", "twitter", "linkedin", "mail", "youtube"]),
+        command: z.string().max(40),
+      }),
+    )
+    .max(8),
+});
+
+export const VALID_KEYS = ["playlist", "waka", "tech", "courses", "profile"] as const;
 export type SiteContentKey = (typeof VALID_KEYS)[number];
 
 const schemas: Record<SiteContentKey, z.ZodTypeAny> = {
   playlist: playlistSchema,
   waka: wakaSchema,
   tech: techSchema,
+  courses: coursesSchema,
+  profile: profileSchema,
 };
 
 export function isValidKey(k: string): k is SiteContentKey {
@@ -128,7 +180,31 @@ export const DEFAULT_WAKA = {
     { name: "Go", pct: 7 },
     { name: "Others", pct: 11 },
   ],
+  editors: [
+    { name: "VS Code", pct: 58 },
+    { name: "Claude Code", pct: 22 },
+    { name: "Neovim", pct: 12 },
+    { name: "Cursor", pct: 8 },
+  ],
+  os: [
+    { name: "Linux", pct: 76 },
+    { name: "Windows", pct: 24 },
+    { name: "macOS", pct: 0 },
+  ],
 } as const;
+
+export const DEFAULT_COURSES = [
+  { title: "The Modern Python 3 Bootcamp", provider: "Udemy", year: "2023", link: "https://www.udemy.com/certificate/UC-9842c80b-e377-4960-b027-83a31256595d/", status: "completed" as const },
+  { title: "OWASP Zero", provider: "voorivex.academy", year: "2023", link: "", status: "completed" as const },
+  { title: "Certified Ethical Hacker (CEH)", provider: "maktabkhooneh", year: "2023", link: "", status: "completed" as const },
+  { title: "Security Plus", provider: "maktabkhooneh", year: "2022", link: "", status: "completed" as const },
+  { title: "LPIC-1 Bootcamp", provider: "Jadi", year: "2022", link: "", status: "completed" as const },
+  { title: "CompTIA Network+", provider: "Arjang", year: "2022", link: "", status: "completed" as const },
+  { title: "The Modern Python", provider: "Arjang", year: "2023", link: "", status: "completed" as const },
+  { title: "Docker — Kubernetes", provider: "DevOps", year: "2024", link: "", status: "completed" as const },
+  { title: "nmap", provider: "Udemy", year: "2023", link: "", status: "completed" as const },
+  { title: "REACT.JS Course", provider: "Frontend", year: "2024", link: "", status: "completed" as const },
+] as const;
 
 export const DEFAULT_TECH = [
   { name: "TypeScript", yrs: "3+ yrs", level: "Advanced", color: "#3178c6", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" },
@@ -143,3 +219,19 @@ export const DEFAULT_TECH = [
   { name: "MongoDB", yrs: "2+ yrs", level: "Intermediate", color: "#47a248", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mongodb/mongodb-original.svg" },
   { name: "Bun", yrs: "1+ yrs", level: "Intermediate", color: "#fbf0df", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bun/bun-original.svg" },
 ] as const;
+
+export const DEFAULT_PROFILE = {
+  handle: "ixi_flower_",
+  title: "Full-Stack Developer",
+  name: "Amirabbas Rouintan",
+  bio: "Self-taught software engineer from Iran. Specializing in Next.js, TypeScript, Python & Go — I build fast web apps, Telegram bots, trading systems and self-hosted infra. Obsessed with clean UIs, automation, and shipping real products.",
+  avatar: "/avatar.jpg",
+  avatarPublicId: "",
+  socials: [
+    { label: "GitHub", href: "https://github.com/ixiflower", icon: "github" as const, command: "open github" },
+    { label: "Twitter", href: "https://x.com/ixi_flower0", icon: "twitter" as const, command: "open twitter" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/amirabbas-rouintan", icon: "linkedin" as const, command: "open linkedin" },
+    { label: "YouTube", href: "https://www.youtube.com/@ixi_flower0", icon: "youtube" as const, command: "open youtube" },
+    { label: "Email", href: "mailto:amirabbas.rouintan2007@gmail.com", icon: "mail" as const, command: "send email" },
+  ],
+} as const;

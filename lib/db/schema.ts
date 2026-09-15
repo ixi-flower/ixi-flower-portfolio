@@ -28,6 +28,7 @@ export const posts = pgTable(
     coverUrl: text("cover_url"),
     coverPublicId: text("cover_public_id"),
     status: varchar("status", { length: 20 }).notNull().default("draft"), // draft | published
+    sortOrder: integer("sort_order").notNull().default(0),
     publishedAt: timestamp("published_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -83,7 +84,65 @@ export const siteSettings = pgTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const postReactions = pgTable(
+  "post_reactions",
+  {
+    id: serial("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    fingerprint: varchar("fingerprint", { length: 120 }).notNull(),
+    kind: varchar("kind", { length: 10 }).notNull(), // like | dislike
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("post_reactions_post_idx").on(t.postId),
+    uniqueIndex("post_reactions_uniq").on(t.postId, t.fingerprint),
+  ]
+);
+
+// — Notes (Trilium-style hierarchical notes, Tiptap HTML) —
+export const notes = pgTable(
+  "notes",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    parentId: text("parent_id").references((): any => notes.id, { onDelete: "cascade" }),
+    title: varchar("title", { length: 240 }).notNull(),
+    content: text("content").notNull().default(""),
+    icon: varchar("icon", { length: 40 }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("notes_parent_idx").on(t.parentId),
+    index("notes_sort_idx").on(t.parentId, t.sortOrder),
+  ]
+);
+
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    title: varchar("title", { length: 240 }).notNull(),
+    url: text("url").notNull(),
+    description: varchar("description", { length: 500 }),
+    favicon: text("favicon"),
+    folder: varchar("folder", { length: 80 }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("bookmarks_sort_idx").on(t.sortOrder), index("bookmarks_folder_idx").on(t.folder)]
+);
+
 export type PostRow = typeof posts.$inferSelect;
 export type TagRow = typeof tags.$inferSelect;
 export type AdminUserRow = typeof adminUsers.$inferSelect;
 export type SiteSettingRow = typeof siteSettings.$inferSelect;
+export type NoteRow = typeof notes.$inferSelect;
+export type BookmarkRow = typeof bookmarks.$inferSelect;

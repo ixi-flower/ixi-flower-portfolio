@@ -12,6 +12,8 @@ import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { uploadFile } from '@/lib/upload'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -19,7 +21,7 @@ import {
   Link2, ImagePlus, Table as TableIcon, Undo2, Redo2, Minus,
   AlignRight, AlignCenter, AlignLeft, RemoveFormatting,
   ArrowUpToLine, ArrowDownToLine, ArrowRightToLine, ArrowLeftToLine,
-  Trash2, Plus, Upload,
+  Trash2, Plus, Upload, ListChecks,
 } from 'lucide-react'
 
 interface Props { value: string; onChange: (html: string) => void; placeholder?: string }
@@ -69,7 +71,7 @@ export default memo(function BlogEditor({ value, onChange, placeholder }: Props)
   const [error, setError] = useState('')
 
   const extensions = useMemo(() => [
-    StarterKit,
+    StarterKit.configure({}),
     MarkdownPaste,
     Underline,
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -77,6 +79,8 @@ export default memo(function BlogEditor({ value, onChange, placeholder }: Props)
     Image.configure({ allowBase64: false }),
     Table.configure({ resizable: true }),
     TableRow, TableCell, TableHeader,
+    TaskList,
+    TaskItem.configure({ nested: true }),
     Placeholder.configure({ placeholder: placeholder || 'Write content…' }),
   ], [placeholder])
 
@@ -93,7 +97,7 @@ export default memo(function BlogEditor({ value, onChange, placeholder }: Props)
       return {
         isBold: is('bold'), isItalic: is('italic'), isUnderline: is('underline'), isStrike: is('strike'),
         isH1: is('heading', { level: 1 }), isH2: is('heading', { level: 2 }), isH3: is('heading', { level: 3 }),
-        isBullet: is('bulletList'), isOrdered: is('orderedList'), isQuote: is('blockquote'), isCode: is('codeBlock'),
+        isBullet: is('bulletList'), isOrdered: is('orderedList'), isTaskList: is('taskList'), isQuote: is('blockquote'), isCode: is('codeBlock'),
         isLink: is('link'), isTable: is('table'),
         isAlignRight: isAlign('right'), isAlignCenter: isAlign('center'), isAlignLeft: isAlign('left'),
         canUndo: !!e?.can().undo(), canRedo: !!e?.can().redo(),
@@ -142,6 +146,7 @@ export default memo(function BlogEditor({ value, onChange, placeholder }: Props)
         <Btn title="H3" active={state.isH3} onClick={() => cmd.toggleHeading({ level: 3 }).run()}><Heading3 size={14} /></Btn>
         <Btn title="Bullet list" active={state.isBullet} onClick={() => cmd.toggleBulletList().run()}><List size={14} /></Btn>
         <Btn title="Ordered list" active={state.isOrdered} onClick={() => cmd.toggleOrderedList().run()}><ListOrdered size={14} /></Btn>
+        <Btn title="Checklist" active={state.isTaskList} onClick={() => cmd.toggleTaskList().run()}><ListChecks size={14} /></Btn>
         <Btn title="Quote" active={state.isQuote} onClick={() => cmd.toggleBlockquote().run()}><Quote size={14} /></Btn>
         <Btn title="Code block" active={state.isCode} onClick={() => cmd.toggleCodeBlock().run()}><Code size={14} /></Btn>
         <Btn title="Divider" onClick={() => cmd.setHorizontalRule().run()}><Minus size={14} /></Btn>

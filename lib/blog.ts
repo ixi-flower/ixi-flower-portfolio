@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, inArray, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, like, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, tags, postTags } from "@/lib/db/schema";
 import type { PostRow, TagRow } from "@/lib/db/schema";
@@ -62,6 +62,7 @@ function toPublicPost(p: PostRow) {
     coverUrl: p.coverUrl,
     coverPublicId: p.coverPublicId,
     status: p.status,
+    sortOrder: (p as Record<string, unknown>).sortOrder ?? 0,
     publishedAt: p.publishedAt,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
@@ -156,7 +157,7 @@ export async function getBlogPosts(opts: {
     .select()
     .from(posts)
     .where(where)
-    .orderBy(desc(posts.publishedAt), desc(posts.createdAt))
+    .orderBy(asc(posts.sortOrder), desc(posts.publishedAt), desc(posts.createdAt))
     .limit(perPage)
     .offset(offset);
 
@@ -308,6 +309,12 @@ export async function updateBlogPost(
 
   const updated = await getBlogPostById(id);
   return updated;
+}
+
+export async function reorderBlogPosts(orderedIds: string[]): Promise<void> {
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db.update(posts).set({ sortOrder: i } as any).where(eq(posts.id, orderedIds[i]));
+  }
 }
 
 export async function deleteBlogPost(id: string): Promise<boolean> {

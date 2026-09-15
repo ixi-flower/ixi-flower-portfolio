@@ -13,6 +13,7 @@
   --font-vazirmatn: var(--font-vazirmatn);
 }
 
+html { scroll-behavior: smooth; }
 * { scrollbar-width: thin; scrollbar-color: #3f3f46 transparent; }
 
 body {
@@ -27,6 +28,38 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
 @keyframes pulse-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes yt-shine { 0% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.yt-shine { position: relative; overflow: hidden; }
+.yt-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.38) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: yt-shine 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(6px) scale(0.97); } }
+.toast-enter { animation: toastIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.toast-exit { animation: toastOut 0.28s ease both; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp 0.45s ease both; }
+@keyframes adminFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.admin-fade { animation: adminFadeUp 0.4s ease both; }
+.admin-fade-d1 { animation-delay: 70ms; }
+.admin-fade-d2 { animation-delay: 140ms; }
+.admin-fade-d3 { animation-delay: 210ms; }
+.delay-1 { animation-delay: 60ms; }
+.delay-2 { animation-delay: 120ms; }
+.delay-3 { animation-delay: 180ms; }
+.delay-4 { animation-delay: 240ms; }
+.delay-5 { animation-delay: 300ms; }
+.delay-6 { animation-delay: 360ms; }
+.delay-7 { animation-delay: 420ms; }
+.delay-8 { animation-delay: 480ms; }
 
 /* — Tiptap editor surface (zinc terminal chrome) — */
 .tiptap-editor .ProseMirror {
@@ -49,11 +82,12 @@ body {
 .tiptap-editor .ProseMirror h3 { font-size: 1.05rem; font-weight: 700; color: #e4e4e7; margin: 1rem 0 0.4rem; }
 .tiptap-editor .ProseMirror blockquote {
   border-left: 2px solid #52525b;
-  padding: 0.3rem 0.9rem;
-  margin: 0.75rem 0;
+  padding: 0.15rem 0.9rem;
+  margin: 0.5rem 0;
   color: #a1a1aa;
   font-style: italic;
 }
+.tiptap-editor .ProseMirror blockquote p { margin: 0; }
 .tiptap-editor .ProseMirror pre {
   background: #09090b;
   border: 1px solid #27272a;
@@ -72,6 +106,13 @@ body {
 .tiptap-editor .ProseMirror th { background: #27272a; color: #fafafa; }
 .tiptap-editor .ProseMirror ul, .tiptap-editor .ProseMirror ol { padding-left: 1.25rem; margin: 0.5rem 0; }
 .tiptap-editor .ProseMirror li { margin-bottom: 0.25rem; }
+/* — Tiptap task list / checklist — */
+.tiptap-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem; }
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label { flex-shrink: 0; display: flex; align-items: center; padding-top: 0.35rem; }
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] { width: 14px; height: 14px; accent-color: #e4e4e7; border: 1px solid #52525b; background: #09090b; cursor: pointer; }
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { opacity: 0.6; text-decoration: line-through; text-decoration-color: #52525b; }
 
 /* — Public blog HTML rendering (inside modal / page) — */
 .blog-content { color: #d4d4d8; line-height: 1.8; font-size: 14px; overflow-wrap: break-word; }
@@ -84,13 +125,15 @@ body {
 .blog-content strong { color: #fafafa; }
 .blog-content blockquote {
   border-left: 2px solid #52525b;
-  padding: 0.35rem 1rem;
-  margin: 0 0 1rem;
+  padding: 0.2rem 1rem;
+  margin: 0.5rem 0;
   color: #a1a1aa;
   font-style: italic;
   background: #18181b;
 }
+.blog-content blockquote p { margin: 0; }
 .blog-content pre {
+  position: relative;
   background: #09090b;
   border: 1px solid #27272a;
   padding: 0.85rem 1rem;
@@ -100,6 +143,29 @@ body {
   line-height: 1.65;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
+.code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid #3f3f46;
+  background: #27272a;
+  color: #a1a1aa;
+  font-size: 10px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
+}
+.blog-content pre:hover .code-copy-btn { opacity: 1; }
+.code-copy-btn:hover { background: #3f3f46; color: #fafafa; }
+.code-copy-btn.copied { color: #86efac; border-color: #166534; background: #052e16; opacity: 1; }
 .blog-content code { background: #27272a; border: 1px solid #3f3f46; border-radius: 2px; padding: 0.1rem 0.35rem; font-size: 0.85em; font-family: var(--font-geist-mono), ui-monospace, monospace; }
 .blog-content pre code { background: none; border: none; padding: 0; color: #d4d4d8; }
 .blog-content img { max-width: 100%; height: auto; display: block; margin: 1.25rem auto; border: 1px solid #27272a; }
@@ -108,6 +174,32 @@ body {
 .blog-content ul { list-style: disc; }
 .blog-content ol { list-style: decimal; }
 .blog-content li { margin-bottom: 0.3rem; }
+.blog-content ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0 0 1rem; }
+.blog-content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.55rem; margin-bottom: 0.35rem; }
+.blog-content ul[data-type="taskList"] li > label { flex-shrink: 0; display: flex; align-items: center; padding-top: 0.35rem; }
+.blog-content ul[data-type="taskList"] li > label input[type="checkbox"] { width: 14px; height: 14px; accent-color: #e4e4e7; cursor: pointer; }
+.blog-content ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.blog-content ul[data-type="taskList"] li[data-checked="true"] > div { opacity: 0.6; text-decoration: line-through; text-decoration-color: #52525b; }
 .blog-content table { width: 100%; border-collapse: collapse; margin: 0 0 1.25rem; font-size: 0.9rem; }
 .blog-content th, .blog-content td { border: 1px solid #3f3f46; padding: 0.45rem 0.65rem; text-align: left; }
 .blog-content th { background: #27272a; font-weight: 700; color: #fafafa; }
+
+/* — Code blocks must always be LTR even inside RTL (FA) contexts — */
+.blog-content pre,
+.blog-content pre code,
+.blog-content code {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+.blog-content pre { white-space: pre; }
+
+/* — Persian (Vazirmatn) smoothing — very smooth rendering — */
+[class*="font-[var(--font-vazirmatn)]"],
+.font-\[var\(--font-vazirmatn\)\] {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" 1;
+  letter-spacing: -0.01em;
+}
