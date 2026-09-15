@@ -61,8 +61,7 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
   category: "technology",
-  // add your Google Search Console verification token when you have it:
-  // verification: { google: "YOUR_TOKEN_HERE" },
+  verification: { google: "WaFpQHDDo7wXFI-lKwKR-NDkTdn6x5cH5bz1tIVHCAs" },
 };
 
 const jsonLd = {
