@@ -79,8 +79,15 @@ const toolBtn = (active: boolean) =>
 
 function Btn({ onClick, active = false, disabled = false, title, children }: { onClick: () => void; active?: boolean; disabled?: boolean; title: string; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} title={title} aria-label={title}
-      className={`${toolBtn(active)} disabled:opacity-30 disabled:pointer-events-none`}>
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-label={title}
+      className={`${toolBtn(active)} disabled:opacity-30 disabled:pointer-events-none`}
+    >
       {children}
     </button>
   )
