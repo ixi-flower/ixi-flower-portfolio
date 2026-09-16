@@ -67,32 +67,37 @@ export default function AdminNotesPage() {
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skipAutoRef = useRef(false)
   const savingRef = useRef(false)
+  const hasLoadedRef = useRef(false)
 
-  const load = useCallback(async () => {
-    setLoading(true); setErr('')
+  const load = useCallback(async (silent = false) => {
+    const showLoader = !hasLoadedRef.current && !silent
+    if (showLoader) { setLoading(true); setErr('') }
     try {
       const r = await fetch('/api/admin/notes', { cache: 'no-store' })
       if (!r.ok) throw new Error('Failed to load')
       const j = await r.json()
       const list: Note[] = j.notes || []
       setNotes(list)
-      if (noteParam && list.some(n => n.id === noteParam)) setSelectedId(noteParam)
-      else if (!selectedId && list.length) setSelectedId(list[0].id)
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Load failed') }
-    finally { setLoading(false) }
-  }, [selectedId, noteParam])
+      setSelectedId(prev => {
+        if (noteParam && list.some(n => n.id === noteParam)) return noteParam
+        if (prev && list.some(n => n.id === prev)) return prev
+        if (!prev && list.length) return list[0].id
+        if (prev && !list.some(n => n.id === prev)) return list[0]?.id ?? null
+        return prev
+      })
+    } catch (e) { if (showLoader) setErr(e instanceof Error ? e.message : 'Load failed') }
+    finally { if (showLoader) setLoading(false); hasLoadedRef.current = true }
+  }, [noteParam])
 
-  useEffect(() => { load() }, [load])
-  // live-time: sidebar mutations (rename/delete/reorder/create via context menu / drag) → reload without hard refresh
+  useEffect(() => { load(false) }, [load])
+  // live-time: sidebar mutations (rename/delete/reorder/create via context menu / drag) → silent refresh (no full-screen loader)
   useEffect(() => {
-    const h = () => { load() }
+    const h = () => { load(true) }
     window.addEventListener('notes:changed', h)
-    window.addEventListener('focus', h)
     const onVis = () => { if (document.visibilityState === 'visible') h() }
     document.addEventListener('visibilitychange', onVis)
     return () => {
       window.removeEventListener('notes:changed', h)
-      window.removeEventListener('focus', h)
       document.removeEventListener('visibilitychange', onVis)
     }
   }, [load])
