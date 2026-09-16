@@ -107,6 +107,26 @@ export async function deleteApiToken(id: string) {
   return true;
 }
 
+export async function regenerateApiToken(id: string) {
+  const rows = await db.select().from(apiTokens).where(eq(apiTokens.id, id)).limit(1);
+  if (!rows.length) return null;
+  const row = rows[0] as typeof rows[number];
+  const { plaintext, hash, prefix } = generateToken();
+  await db
+    .update(apiTokens)
+    .set({ tokenHash: hash, prefix, lastUsedAt: null, updatedAt: new Date() })
+    .where(eq(apiTokens.id, id));
+  return {
+    id: row.id,
+    name: row.name,
+    prefix,
+    scopes: row.scopes as string[],
+    plaintext,
+    expiresAt: row.expiresAt,
+    createdAt: row.createdAt,
+  };
+}
+
 export async function lookupTokenByHash(hash: string) {
   const rows = await db.select().from(apiTokens).where(eq(apiTokens.tokenHash, hash)).limit(1);
   if (!rows.length) return null;

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Key, Copy, Trash2, Plus, Shield, ExternalLink, Clock, Check } from 'lucide-react'
+import { Key, Copy, Trash2, Plus, Shield, ExternalLink, Clock, Check, RefreshCw } from 'lucide-react'
 import ConfirmDialog from '@/components/admin/ConfirmDialog'
 
 type TokenRow = { id: string; name: string; prefix: string; scopes: string[]; lastUsedAt: string | null; expiresAt: string | null; createdAt: string }
@@ -18,8 +18,11 @@ export default function AdminApiPage() {
   const [creating, setCreating] = useState(false)
   const [createdToken, setCreatedToken] = useState<string | null>(null)
   const [createdPrefix, setCreatedPrefix] = useState('')
+  const [createdName, setCreatedName] = useState('')
   const [copied, setCopied] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<TokenRow | null>(null)
+  const [pendingRegen, setPendingRegen] = useState<TokenRow | null>(null)
+  const [regenLoading, setRegenLoading] = useState(false)
 
   const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ixiflower.vercel.app'
 
@@ -59,6 +62,7 @@ export default function AdminApiPage() {
       if (!r.ok) { push({t:'err', m:j.error || 'Create failed'}); return }
       setCreatedToken(j.token as string)
       setCreatedPrefix(j.prefix as string)
+      setCreatedName(newName.trim())
       setCopied(false)
       setNewName(''); setNewExpires('')
       push({t:'ok', m:'Token created ✓ — copy it now!'})
@@ -79,6 +83,26 @@ export default function AdminApiPage() {
     if (!r.ok) { push({t:'err', m:j.error || 'Delete failed'}); return }
     push({t:'ok', m:'Revoked ✓'})
     setTokens(prev=>prev.filter(x=>x.id!==id))
+  }
+
+  async function confirmRegen() {
+    if (!pendingRegen) return
+    const row = pendingRegen; setPendingRegen(null)
+    setRegenLoading(true)
+    try {
+      const r = await fetch(`/api/admin/api-tokens/${row.id}/regenerate`, { method:'POST' })
+      const j = await r.json().catch(()=>({}))
+      if (!r.ok) { push({t:'err', m:j.error || 'Regenerate failed'}); return }
+      setCreatedToken(j.token as string)
+      setCreatedPrefix(j.prefix as string)
+      setCreatedName(row.name)
+      setCopied(false)
+      push({t:'ok', m:'Token regenerated ✓ — copy it now! Old token is revoked.'})
+      await load()
+      // scroll to the new token box
+      setTimeout(()=>document.getElementById('regen-token-box')?.scrollIntoView({ behavior:'smooth', block:'center' }), 100)
+    } catch { push({t:'err', m:'Network error'}) }
+    finally { setRegenLoading(false) }
   }
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8"><p className="text-zinc-600 text-sm font-mono animate-pulse">$ api-tokens --list …</p></div>
@@ -120,8 +144,8 @@ export default function AdminApiPage() {
         </div>
         <button onClick={create} disabled={creating} className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white disabled:opacity-50 font-mono inline-flex items-center gap-1.5"><Key className="h-4 w-4" /> {creating ? 'Creating…' : 'Create token'}</button>
         {createdToken && (
-          <div className="border border-emerald-900/50 bg-emerald-950/20 p-3 space-y-2">
-            <div className="text-xs font-mono text-emerald-300 font-bold">Copy now — never shown again · prefix {createdPrefix}</div>
+          <div id="regen-token-box" className="border border-emerald-900/50 bg-emerald-950/20 p-3 space-y-2">
+            <div className="text-xs font-mono text-emerald-300 font-bold">Copy now — never shown again {createdName ? `· ${createdName}` : ''} · prefix {createdPrefix}</div>
             <div className="flex gap-2">
               <code className="flex-1 bg-zinc-950 border border-zinc-800 px-3 py-2 text-xs font-mono text-amber-200 break-all select-all">{createdToken}</code>
               <button onClick={()=>copy(createdToken)} className={`px-3 py-2 text-xs font-mono border shrink-0 inline-flex items-center gap-1.5 ${copied ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800'}`}><Copy className="h-3.5 w-3.5" />{copied ? 'Copied ✓' : 'Copy'}</button>
@@ -135,7 +159,7 @@ export default function AdminApiPage() {
       <div className="border border-zinc-800 bg-zinc-900">
         <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
           <span className="text-xs font-bold text-zinc-100 font-mono">Tokens · {tokens.length}</span>
-          <span className="text-[11px] font-mono text-zinc-600">hash at rest · touch on use</span>
+          <span className="text-[11px] font-mono text-zinc-600">hash at rest · touch on use · regenerate to copy again</span>
         </div>
         {tokens.length===0 ? (
           <p className="text-xs text-zinc-600 font-mono px-4 py-6 text-center">No tokens yet — create one above.</p>
@@ -152,7 +176,10 @@ export default function AdminApiPage() {
                     {!t.lastUsedAt && <span className="text-zinc-600">never used</span>}
                   </div>
                 </div>
-                <button onClick={()=>setPendingDelete(t)} className="h-7 w-7 flex items-center justify-center border border-red-900/50 text-red-400 hover:bg-red-950/30 shrink-0" title="Revoke"><Trash2 className="h-3.5 w-3.5" /></button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button onClick={()=>setPendingRegen(t)} disabled={regenLoading} className="h-7 px-2.5 flex items-center justify-center gap-1 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs font-mono disabled:opacity-50" title="Regenerate — new token, old one revoked, copy again"><RefreshCw className="h-3.5 w-3.5" /> Regenerate</button>
+                  <button onClick={()=>setPendingDelete(t)} className="h-7 w-7 flex items-center justify-center border border-red-900/50 text-red-400 hover:bg-red-950/30 shrink-0" title="Revoke"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
               </div>
             ))}
           </div>
@@ -173,6 +200,14 @@ export default function AdminApiPage() {
         confirmLabel="Revoke"
         onConfirm={confirmDelete}
         onCancel={()=>setPendingDelete(null)}
+      />
+      <ConfirmDialog
+        open={!!pendingRegen}
+        title="Regenerate token?"
+        message={pendingRegen ? `Regenerate "${pendingRegen.name}" (${pendingRegen.prefix}…) — the old token will stop working immediately and a new ixi_pat_… will be shown once. Copy it now.` : ''}
+        confirmLabel={regenLoading ? 'Regenerating…' : 'Regenerate'}
+        onConfirm={confirmRegen}
+        onCancel={()=>setPendingRegen(null)}
       />
     </div>
   )
