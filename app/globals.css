@@ -194,12 +194,52 @@ body {
 }
 .blog-content pre { white-space: pre; }
 
-/* — Persian (Vazirmatn) smoothing — very smooth rendering — */
+/* — Persian (Vazirmatn) — tuned: lighter, airier, very smooth — */
 [class*="font-[var(--font-vazirmatn)]"],
 .font-\[var\(--font-vazirmatn\)\] {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01" 1;
-  letter-spacing: -0.01em;
+  font-variation-settings: "wght" 350;
+  font-weight: 350;
+  line-height: 1.95;
+  letter-spacing: 0;
+  word-spacing: 0.04em;
+}
+
+/* — Editor + rendered markdown: RTL blocks use tuned Vazirmatn — */
+.tiptap-editor .ProseMirror [dir="rtl"],
+.blog-content [dir="rtl"] {
+  font-family: var(--font-vazirmatn), sans-serif;
+  font-weight: 350;
+  line-height: 2.05;
+  letter-spacing: 0;
+  word-spacing: 0.04em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01" 1;
+  font-variation-settings: "wght" 350;
+}
+.tiptap-editor .ProseMirror [dir="rtl"] h1,
+.tiptap-editor .ProseMirror [dir="rtl"] h2,
+.tiptap-editor .ProseMirror [dir="rtl"] h3,
+.blog-content [dir="rtl"] h1,
+.blog-content [dir="rtl"] h2,
+.blog-content [dir="rtl"] h3 {
+  font-weight: 600;
+  font-variation-settings: "wght" 600;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+/* keep code/mono inside RTL staying mono + weight 400 */
+.tiptap-editor .ProseMirror [dir="rtl"] code,
+.tiptap-editor .ProseMirror [dir="rtl"] pre,
+.blog-content [dir="rtl"] code,
+.blog-content [dir="rtl"] pre {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 400;
+  font-variation-settings: normal;
+  letter-spacing: 0;
 }
