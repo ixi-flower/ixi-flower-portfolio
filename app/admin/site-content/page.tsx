@@ -2,7 +2,7 @@
 import React, { useEffect, useState, Suspense, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Plus, Trash2, ChevronUp, ChevronDown, LogOut, GripVertical, Play, Pause } from 'lucide-react'
+import { Plus, Trash2, ChevronUp, ChevronDown, LogOut, GripVertical, Play, Pause, Upload, X as XIcon, Music2 } from 'lucide-react'
 
 type PlaylistTrack = { title: string; artist: string; dur: string; url?: string }
 type WakaData = { total: string; daily: string; codingSince: string; age: string; langs: { name: string; pct: number }[]; editors?: { name: string; pct: number }[]; os?: { name: string; pct: number }[] }
@@ -28,6 +28,7 @@ function SiteContentInner() {
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null)
   const [err, setErr] = useState('')
   const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [showAddTrack, setShowAddTrack] = useState(false)
 
   useEffect(() => {
     const t = searchParams.get('tab') as Tab | null
@@ -144,12 +145,21 @@ function SiteContentInner() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-zinc-100">Playlist — {playlist.length} tracks</h2>
             <button
-              onClick={() => setPlaylist((p) => [...p, { title: '', artist: 'Bahram', dur: '3:00', url: '' }])}
+              onClick={() => setShowAddTrack(true)}
               className="px-3 py-1.5 text-xs border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
             >
               <span className="inline-flex items-center gap-1"><Plus className="h-3 w-3" /> Add track</span>
             </button>
           </div>
+          {showAddTrack && (
+            <AddTrackModal
+              onClose={() => setShowAddTrack(false)}
+              onAdd={(t) => {
+                setPlaylist((p) => [...p, t])
+                setShowAddTrack(false)
+              }}
+            />
+          )}
           <div className="space-y-2">
             {playlist.map((t, i) => (
               <div
@@ -429,27 +439,150 @@ export default function AdminSiteContentPage() {
   )
 }
 
+// Helpers
+function fmtDur(s: number) {
+  if (!isFinite(s) || s <= 0) return '0:00'
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+function getAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const a = document.createElement('audio')
+    a.preload = 'metadata'
+    const done = (v: number) => { URL.revokeObjectURL(url); resolve(v) }
+    a.onloadedmetadata = () => done(a.duration || 0)
+    a.onerror = () => done(0)
+    a.src = url
+    // fallback — if metadata never fires
+    setTimeout(() => done(0), 4000)
+  })
+}
+function uploadAudioWithProgress(file: File, onProgress: (pct: number) => void): Promise<{ url: string }> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', '/api/admin/upload-audio')
+    try {
+      const secret = typeof window !== 'undefined' ? localStorage.getItem('ixi_admin_secret') : null
+      if (secret) xhr.setRequestHeader('x-admin-secret', secret)
+      else xhr.setRequestHeader('x-admin-email', 'amirabbas.rouintan2007@gmail.com')
+    } catch {}
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)) }
+    xhr.onload = () => {
+      try {
+        const j = JSON.parse(xhr.responseText)
+        if (xhr.status >= 200 && xhr.status < 300) resolve({ url: j.url as string })
+        else reject(new Error(j.error || 'Upload failed'))
+      } catch { reject(new Error('Upload failed')) }
+    }
+    xhr.onerror = () => reject(new Error('Network error'))
+    const fd = new FormData()
+    fd.append('file', file)
+    xhr.send(fd)
+  })
+}
+
+function AddTrackModal({ onClose, onAdd }: { onClose: () => void; onAdd: (t: PlaylistTrack) => void }) {
+  const [dragOver, setDragOver] = useState(false)
+  const [fileName, setFileName] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [pct, setPct] = useState(0)
+  const [upErr, setUpErr] = useState('')
+
+  async function handleFile(file: File) {
+    if (!file) return
+    // quick client-side duration (before upload — fills dur immediately, corrected after)
+    const durPromise = getAudioDuration(file)
+    setFileName(file.name)
+    setUploading(true); setPct(0); setUpErr('')
+    try {
+      const guessedDur = fmtDur(await durPromise)
+      const { url } = await uploadAudioWithProgress(file, setPct)
+      // finalize duration — trust audio metadata first, fallback to guessed
+      const title = file.name.replace(/\.[^.]+$/, '')
+      onAdd({ title, artist: 'Bahram', dur: guessedDur || '0:00', url })
+    } catch (e) {
+      setUpErr(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f) handleFile(f)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Close" />
+      <div className="relative w-full max-w-md border border-zinc-800 bg-zinc-900 p-4 shadow-xl">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2"><Music2 className="h-4 w-4 text-zinc-500" /> Add track</h3>
+          <button onClick={onClose} className="h-7 w-7 flex items-center justify-center border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"><XIcon className="h-3.5 w-3.5" /></button>
+        </div>
+
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed flex flex-col items-center justify-center gap-2 py-8 px-4 text-center transition-colors ${dragOver ? 'border-zinc-400 bg-zinc-800/60' : 'border-zinc-700 bg-zinc-950/50 hover:border-zinc-600 hover:bg-zinc-900'}`}
+        >
+          <Upload className={`h-6 w-6 ${dragOver ? 'text-zinc-200' : 'text-zinc-500'}`} />
+          <p className="text-xs text-zinc-400">Drag & drop audio here</p>
+          <p className="text-[11px] text-zinc-600 font-mono">mp3 · wav · flac · ogg · m4a · aac — ≤ 60 MB</p>
+          <span className="text-[11px] text-zinc-600">or</span>
+          <label className="px-3 py-1.5 text-xs border border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 cursor-pointer">
+            Browse files
+            <input type="file" accept="audio/*,.mp3,.wav,.flac,.ogg,.m4a,.aac" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
+          </label>
+          {fileName && !uploading && !upErr && <p className="text-[11px] text-zinc-500 font-mono truncate max-w-full">{fileName}</p>}
+        </div>
+
+        {uploading && (
+          <div className="mt-3 space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-mono">
+              <span className="text-zinc-400 truncate">{fileName || 'Uploading…'}</span>
+              <span className="text-zinc-300 tabular-nums">{pct}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-zinc-800 border border-zinc-800">
+              <div className="h-full bg-zinc-100 transition-[width] duration-150" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        )}
+        {upErr && <p className="text-[11px] text-red-400 font-mono mt-2">{upErr}</p>}
+        {!uploading && upErr && (
+          <button onClick={() => { setUpErr(''); setFileName('') }} className="mt-2 text-[11px] text-zinc-500 hover:text-zinc-300 underline">Try again</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function PlaylistRow({ track, idx, total, onChange, onMoveUp, onMoveDown, onRemove }: { track: PlaylistTrack; idx: number; total: number; onChange: (p: Partial<PlaylistTrack>) => void; onMoveUp: () => void; onMoveDown: () => void; onRemove: () => void }) {
   const [uploading, setUploading] = useState(false)
+  const [pct, setPct] = useState(0)
   const [upErr, setUpErr] = useState('')
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    setUploading(true); setUpErr('')
+    setUploading(true); setUpErr(''); setPct(0)
+    // auto title + duration from file before upload finishes
+    const durPromise = getAudioDuration(f)
     try {
-      const fd = new FormData()
-      fd.append('file', f)
-      const r = await fetch('/api/admin/upload-audio', { method: 'POST', body: fd })
-      const j = await r.json().catch(() => ({}))
-      if (!r.ok) { setUpErr(j.error || 'Upload failed'); return }
-      onChange({ url: j.url as string })
-      if (!track.title) {
-        const base = f.name.replace(/\.[^.]+$/, '')
-        onChange({ title: base })
-      }
-    } catch {
-      setUpErr('Network error')
+      const j = await uploadAudioWithProgress(f, setPct)
+      const dur = fmtDur(await durPromise)
+      const patch: Partial<PlaylistTrack> = { url: j.url as string }
+      if (!track.title) patch.title = f.name.replace(/\.[^.]+$/, '')
+      if (dur !== '0:00') patch.dur = dur
+      // if already have title, still auto-fill duration if empty / default
+      if (!patch.title && dur !== '0:00' && (!track.dur || track.dur === '3:00')) patch.dur = dur
+      onChange(patch)
+    } catch (err) {
+      setUpErr(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setUploading(false)
       e.target.value = ''
@@ -472,18 +605,23 @@ function PlaylistRow({ track, idx, total, onChange, onMoveUp, onMoveDown, onRemo
       <div className="flex flex-wrap gap-2 items-center">
         <input value={track.url || ''} onChange={(e) => onChange({ url: e.target.value })} placeholder="https://res.cloudinary.com/.../track.mp3  (or upload →)" className="flex-1 min-w-[200px] bg-zinc-950 border border-zinc-800 px-2 py-1.5 text-xs text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 font-mono" />
         <label className={`px-3 py-1.5 text-xs border cursor-pointer ${uploading ? 'bg-zinc-800 border-zinc-700 text-zinc-500' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'}`}>
-          {uploading ? 'Uploading…' : 'Upload audio'}
+          {uploading ? `Uploading ${pct}%` : 'Upload audio'}
           <input type="file" accept="audio/*,.mp3,.wav,.flac,.ogg,.m4a,.aac" onChange={handleFile} disabled={uploading} className="hidden" />
         </label>
         {track.url && <span className="text-[11px] text-emerald-400 font-mono truncate max-w-[160px]">✓ {track.url.slice(0, 40)}…</span>}
       </div>
+      {uploading && (
+        <div className="h-1.5 w-full bg-zinc-800 border border-zinc-800">
+          <div className="h-full bg-zinc-100 transition-[width] duration-150" style={{ width: `${pct}%` }} />
+        </div>
+      )}
       {upErr && <p className="text-[11px] text-red-400 font-mono">{upErr}</p>}
-      {track.url && <InlineAudioPlayer url={track.url} title={track.title || 'track'} />}
+      {track.url && <InlineAudioPlayer url={track.url} title={track.title || 'track'} onDuration={(d) => { if (d && d !== '0:00' && (!track.dur || track.dur === '3:00')) onChange({ dur: d }) }} />}
     </div>
   )
 }
 
-function InlineAudioPlayer({ url, title }: { url: string; title: string }) {
+function InlineAudioPlayer({ url, title, onDuration }: { url: string; title: string; onDuration?: (dur: string) => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
   const [cur, setCur] = useState(0)
@@ -533,7 +671,11 @@ function InlineAudioPlayer({ url, title }: { url: string; title: string }) {
         ref={audioRef}
         src={url}
         preload="metadata"
-        onLoadedMetadata={(e) => setDur((e.target as HTMLAudioElement).duration || 0)}
+        onLoadedMetadata={(e) => {
+          const d = (e.target as HTMLAudioElement).duration || 0
+          setDur(d)
+          if (d) onDuration?.(fmt(d))
+        }}
         onTimeUpdate={(e) => setCur((e.target as HTMLAudioElement).currentTime)}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
