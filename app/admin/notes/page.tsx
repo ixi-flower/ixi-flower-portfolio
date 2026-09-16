@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Plus, Search, FolderTree, FilePlus, FolderPlus } from 'lucide-react'
@@ -62,6 +62,11 @@ export default function AdminNotesPage() {
   const [editIcon, setEditIcon] = useState('')
   const [editContent, setEditContent] = useState('')
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const lastSavedRef = useRef({ title: '', icon: '', content: '' })
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const skipAutoRef = useRef(false)
+  const savingRef = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -104,6 +109,10 @@ export default function AdminNotesPage() {
   const selected = notes.find(n => n.id === selectedId) ?? null
   useEffect(() => {
     if (selected) {
+      skipAutoRef.current = true
+      lastSavedRef.current = { title: selected.title, icon: selected.icon || '', content: selected.content || '' }
+      setAutoStatus('idle')
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
       setEditTitle(selected.title)
       setEditIcon(selected.icon || '')
       setEditContent(selected.content || '')
@@ -129,6 +138,7 @@ export default function AdminNotesPage() {
 
   async function saveSelected() {
     if (!selected) return
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
     setSaving(true); setMsg(null)
     try {
       const r = await fetch(`/api/admin/notes/${selected.id}`, {
@@ -137,13 +147,53 @@ export default function AdminNotesPage() {
       })
       const j = await r.json().catch(() => ({}))
       if (!r.ok) { setMsg({ t: 'err', m: j.error || 'Save failed' }); return }
+      lastSavedRef.current = { title: editTitle, icon: editIcon || '', content: editContent }
       setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, title: editTitle, content: editContent, icon: editIcon || null } : n))
       window.dispatchEvent(new Event('notes:changed'))
+      setAutoStatus('saved')
+      setTimeout(() => setAutoStatus('idle'), 2000)
       setMsg({ t: 'ok', m: 'Saved ✓' })
       setTimeout(() => setMsg(null), 2000)
     } catch { setMsg({ t: 'err', m: 'Network error' }) }
     finally { setSaving(false) }
   }
+
+  // autosave — debounced 800ms on title/icon/content edits (covers checklist toggles)
+  useEffect(() => {
+    if (!selected) return
+    if (skipAutoRef.current) { skipAutoRef.current = false; return }
+    const cur = { title: editTitle, icon: editIcon || '', content: editContent }
+    const last = lastSavedRef.current
+    if (cur.title === last.title && cur.icon === last.icon && cur.content === last.content) return
+    if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+    autoTimerRef.current = setTimeout(async () => {
+      if (savingRef.current) return
+      if (!selected) return
+      const latest = lastSavedRef.current
+      if (cur.title === latest.title && cur.icon === latest.icon && cur.content === latest.content) return
+      savingRef.current = true
+      setAutoStatus('saving')
+      try {
+        const r = await fetch(`/api/admin/notes/${selected.id}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: cur.title, content: cur.content, icon: cur.icon || null }),
+        })
+        if (!r.ok) { setAutoStatus('error'); setMsg({ t: 'err', m: 'Autosave failed' }); return }
+        lastSavedRef.current = cur
+        setNotes(prev => prev.map(n => n.id === selected.id ? { ...n, title: cur.title, content: cur.content, icon: cur.icon || null } : n))
+        window.dispatchEvent(new Event('notes:changed'))
+        setAutoStatus('saved')
+        setTimeout(() => setAutoStatus('idle'), 1800)
+      } catch { setAutoStatus('error') }
+      finally { savingRef.current = false }
+    }, 800)
+    return () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current) }
+  }, [editTitle, editIcon, editContent, selected?.id])
+
+  // autosave on unmount / note switch — flush pending
+  useEffect(() => {
+    return () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current) }
+  }, [])
 
   const pendingDeleteNote = pendingDeleteId ? notes.find(x => x.id === pendingDeleteId) ?? null : null
 
@@ -232,9 +282,15 @@ export default function AdminNotesPage() {
                 <BlogEditor value={editContent} onChange={setEditContent} placeholder="Write anything… (headings, tables, code, images, links — all supported)" />
               </div>
             </div>
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 items-center">
               <button onClick={saveSelected} disabled={saving} className="px-4 py-2 bg-zinc-100 text-zinc-900 text-sm hover:bg-white disabled:opacity-50">{saving ? 'Saving…' : 'Save note'}</button>
               <button onClick={() => createNote(selected.id)} className="px-3 py-2 border border-zinc-700 bg-zinc-800 text-zinc-300 text-sm hover:bg-zinc-700 inline-flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> Add child</button>
+              <span className="text-[11px] font-mono ml-1">
+                {autoStatus === 'saving' && <span className="text-zinc-500 animate-pulse">Autosaving…</span>}
+                {autoStatus === 'saved' && <span className="text-emerald-400">Autosaved ✓</span>}
+                {autoStatus === 'error' && <span className="text-red-400">Autosave failed — Save note</span>}
+                {autoStatus === 'idle' && <span className="text-zinc-600">Autosave on</span>}
+              </span>
             </div>
           </div>
         )}
