@@ -1237,7 +1237,7 @@ export default function Home() {
               </a>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              {REPOS.map((r) => {
+              {REPOS.slice(0, 4).map((r) => {
                 const dot = r.lang === "Python" ? "#3572A5" : r.lang === "JavaScript" ? "#f7df1e" : "#3178c6";
                 return (
                 <div key={r.name} className="border border-zinc-800 bg-zinc-900 p-3 hover:border-zinc-700 transition-colors relative overflow-hidden group">
@@ -1257,72 +1257,94 @@ export default function Home() {
             </div>
           </Card>
 
-          {/* BLOGS — live from DB (/api/blog), falls back to hardcoded BLOGS */}
-          {(() => {
-            const source: Blog[] = apiPosts ?? (BLOGS as unknown as Blog[]);
-            const fmtDate = (b: Blog) => {
-              if (isLegacyBlog(b)) return b.date;
-              const s = (b as ApiPost).publishedAt || (b as ApiPost).createdAt;
-              return new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-            };
-            const readTime = (b: Blog) => {
-              if (isLegacyBlog(b)) return b.readTime;
-              const html = (b as ApiPost).content || "";
-              return `${Math.max(1, Math.ceil(html.length / 900))} min`;
-            };
-            const tag = (b: Blog) => isLegacyBlog(b) ? b.tag : ((b as ApiPost).tags?.[0]?.name ?? "Blog");
-            return (
-              <Card className="md:col-span-3" delay={360}>
-                <Prompt cmd={`find ./blogs -type f -name '*.md' | sort -r`} />
-                <div className="relative">
-                  <div className="space-y-2 max-h-[320px] overflow-y-auto custom-scrollbar pr-1 pb-6">
-                    {source.map((b) => (
-                      <button
-                        key={b.slug}
-                        onClick={() => setSelectedBlog(b)}
-                        className="block w-full text-left border border-zinc-800 bg-zinc-800/50 p-2 hover:border-zinc-600 hover:bg-zinc-800 transition-colors relative group"
-                      >
-                        <span className="absolute top-0 left-0 text-zinc-700 text-[8px] leading-none"><pre>+--</pre></span>
-                        <span className="absolute bottom-0 right-0 text-zinc-700 text-[8px] leading-none"><pre>--+</pre></span>
-                        <h3 className="text-sm font-medium text-zinc-200 group-hover:text-white pr-6">
-                          {b.title}
-                          <span className="ml-2 text-[10px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">$ cat →</span>
-                        </h3>
-                        <div className="flex items-center gap-1 mt-1 text-[10px] text-zinc-500">
-                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                            <rect width={18} height={18} x={3} y={4} rx={2} /><path d="M16 2v4M8 2v4M3 10h18" />
-                          </svg>{" "}{fmtDate(b)} · {readTime(b)}
-                        </div>
-                        <p className="text-xs text-zinc-400 mt-1 line-clamp-1">{b.excerpt}</p>
-                        <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{tag(b)}</span>
-                      </button>
+          {/* row: left blogs+tail | right featured — stretched to equal bottom line */}
+          <div className="md:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+            {/* left stack — blogs on top, tail featured directly underneath */}
+            <div className="flex flex-col gap-3 min-w-0 h-full">
+              {/* BLOGS — live from DB (/api/blog), falls back to hardcoded BLOGS */}
+              {(() => {
+                const source: Blog[] = apiPosts ?? (BLOGS as unknown as Blog[]);
+                const fmtDate = (b: Blog) => {
+                  if (isLegacyBlog(b)) return b.date;
+                  const s = (b as ApiPost).publishedAt || (b as ApiPost).createdAt;
+                  return new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                };
+                const readTime = (b: Blog) => {
+                  if (isLegacyBlog(b)) return b.readTime;
+                  const html = (b as ApiPost).content || "";
+                  return `${Math.max(1, Math.ceil(html.length / 900))} min`;
+                };
+                const tag = (b: Blog) => isLegacyBlog(b) ? b.tag : ((b as ApiPost).tags?.[0]?.name ?? "Blog");
+                return (
+                  <Card delay={360}>
+                    <Prompt cmd={`find ./blogs -type f -name '*.md' | sort -r`} />
+                    <div className="relative">
+                      <div className="space-y-2 max-h-[148px] overflow-y-auto custom-scrollbar pr-1 pb-6">
+                        {source.map((b) => (
+                          <button
+                            key={b.slug}
+                            onClick={() => setSelectedBlog(b)}
+                            className="block w-full text-left border border-zinc-800 bg-zinc-800/50 p-2 hover:border-zinc-600 hover:bg-zinc-800 transition-colors relative group"
+                          >
+                            <span className="absolute top-0 left-0 text-zinc-700 text-[8px] leading-none"><pre>+--</pre></span>
+                            <span className="absolute bottom-0 right-0 text-zinc-700 text-[8px] leading-none"><pre>--+</pre></span>
+                            <h3 className="text-sm font-medium text-zinc-200 group-hover:text-white pr-6">
+                              {b.title}
+                              <span className="ml-2 text-[10px] text-green-400 opacity-0 group-hover:opacity-100 transition-opacity">$ cat →</span>
+                            </h3>
+                            <div className="flex items-center gap-1 mt-1 text-[10px] text-zinc-500">
+                              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <rect width={18} height={18} x={3} y={4} rx={2} /><path d="M16 2v4M8 2v4M3 10h18" />
+                              </svg>{" "}{fmtDate(b)} · {readTime(b)}
+                            </div>
+                            <p className="text-xs text-zinc-400 mt-1 line-clamp-1">{b.excerpt}</p>
+                            <span className="inline-block mt-2 text-[10px] px-1.5 py-0.5 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-none">{tag(b)}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
+                    </div>
+                    <div className="text-center mt-2">
+                      <a href="/blogs" className="text-xs text-zinc-300 hover:text-zinc-100 inline-flex items-center gap-1">
+                        View all posts ({source.length}) <span>→</span>
+                      </a>
+                    </div>
+                  </Card>
+                );
+              })()}
+              {/* tail featured — Sofra + Earth Explorer — nudged down to sit on same baseline as BotU/SERENE */}
+              {PROJECTS.length > 4 && (
+                <Card delay={425} className="flex-1 flex flex-col justify-end [&>div]:flex-1">
+                  <div className="flex justify-between items-center mb-3">
+                    <Prompt cmd={`ls ./projects --featured | tail -n ${PROJECTS.length - 4}`} />
+                    <a href="/projects" className="shrink-0 ml-2 inline-flex items-center gap-1 h-7 px-3 text-xs border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 rounded-none">
+                      All Projects <span>↗</span>
+                    </a>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 content-end mt-auto pt-2">
+                    {PROJECTS.slice(4).map((p) => (
+                      <ProjectCard key={p.title} p={p} />
                     ))}
                   </div>
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/80 via-zinc-900/40 to-transparent" aria-hidden />
-                </div>
-                <div className="text-center mt-2">
-                  <a href="/blogs" className="text-xs text-zinc-300 hover:text-zinc-100 inline-flex items-center gap-1">
-                    View all posts ({source.length}) <span>→</span>
-                  </a>
-                </div>
-              </Card>
-            );
-          })()}
+                </Card>
+              )}
+            </div>
 
-          {/* PROJECTS */}
-          <Card className="md:col-span-3" delay={420}>
-            <div className="flex justify-between items-center mb-3">
-              <Prompt cmd={`find ./projects -type f -name '*.featured'`} />
-              <a href="/projects" className="shrink-0 ml-2 inline-flex items-center gap-1 h-7 px-3 text-xs border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 rounded-none">
-                All Projects <span>↗</span>
-              </a>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {PROJECTS.map((p) => (
-                <ProjectCard key={p.title} p={p} />
-              ))}
-            </div>
-          </Card>
+            {/* PROJECTS — right column, 4 featured — h-full + flex so it stretches to same bottom as left stack */}
+            <Card className="h-full flex flex-col [&>div]:flex-1" delay={420}>
+              <div className="flex justify-between items-center mb-3">
+                <Prompt cmd={`find ./projects -type f -name '*.featured'`} />
+                <a href="/projects" className="shrink-0 ml-2 inline-flex items-center gap-1 h-7 px-3 text-xs border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 rounded-none">
+                  All Projects <span>↗</span>
+                </a>
+              </div>
+              <div className="grid grid-cols-2 gap-3 content-start">
+                {PROJECTS.slice(0, 4).map((p) => (
+                  <ProjectCard key={p.title} p={p} />
+                ))}
+              </div>
+            </Card>
+          </div>
 
           {/* COURSES */}
           <Card className="md:col-span-6" delay={440}>
